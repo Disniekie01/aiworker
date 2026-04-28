@@ -6,6 +6,7 @@ This guide runs each component separately so you can isolate failures quickly.
 
 ```bash
 cd /path/to/robotis_vr_isaac
+./scripts/setup_repo.sh
 export ROBOTIS_VR_ROOT="$(pwd)"
 export ISAAC_ROOT="${ISAAC_ROOT:-$HOME/isaacsim}"
 ```
