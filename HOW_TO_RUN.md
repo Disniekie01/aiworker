@@ -16,7 +16,7 @@ Then use `${ROBOTIS_VR_ROOT}` in commands below instead of hardcoded user paths.
 ## 0) Stop old processes (optional but recommended)
 
 ```bash
-/home/disniekie/Robotis/robotis_vr_isaac/scripts/run_stack.sh stop
+"${ROBOTIS_VR_ROOT}/scripts/run_stack.sh" stop
 pkill -f "standalone_ffw_joint_teleop.py" || true
 pkill -f "joint_targets_udp_bridge.py" || true
 pkill -f "loop_joint_test.py" || true
@@ -28,8 +28,8 @@ pkill -f "loop_joint_test.py" || true
 
 ```bash
 source /opt/ros/jazzy/setup.bash
-source /home/disniekie/Robotis/robotis_vr_isaac/ros2_ws/install/setup.bash
-source /home/disniekie/Robotis/robotis_vr_isaac/env_local.bash
+source "${ROBOTIS_VR_ROOT}/ros2_ws/install/setup.bash"
+source "${ROBOTIS_VR_ROOT}/env_local.bash"
 export ROS_DOMAIN_ID=0
 ros2 launch ffw_vuer_dds_relay relay.launch.py
 ```
@@ -44,9 +44,9 @@ Expected:
 
 ```bash
 source /opt/ros/jazzy/setup.bash
-source /home/disniekie/Robotis/robotis_vr_isaac/ros2_ws/install/setup.bash
+source "${ROBOTIS_VR_ROOT}/ros2_ws/install/setup.bash"
 export ROS_DOMAIN_ID=0
-/usr/bin/python3.12 /home/disniekie/Robotis/robotis_vr_isaac/scripts/joint_targets_udp_bridge.py \
+/usr/bin/python3.12 "${ROBOTIS_VR_ROOT}/scripts/joint_targets_udp_bridge.py" \
   --udp_host 127.0.0.1 \
   --udp_port 15000
 ```
@@ -79,9 +79,9 @@ Expected:
 
 ```bash
 source /opt/ros/jazzy/setup.bash
-source /home/disniekie/Robotis/robotis_vr_isaac/ros2_ws/install/setup.bash
+source "${ROBOTIS_VR_ROOT}/ros2_ws/install/setup.bash"
 export ROS_DOMAIN_ID=0
-/usr/bin/python3.12 /home/disniekie/Robotis/robotis_vr_isaac/scripts/loop_joint_test.py --hz 100
+/usr/bin/python3.12 "${ROBOTIS_VR_ROOT}/scripts/loop_joint_test.py" --hz 100
 ```
 
 Expected:
@@ -97,7 +97,7 @@ In a new terminal:
 
 ```bash
 source /opt/ros/jazzy/setup.bash
-source /home/disniekie/Robotis/robotis_vr_isaac/ros2_ws/install/setup.bash
+source "${ROBOTIS_VR_ROOT}/ros2_ws/install/setup.bash"
 export ROS_DOMAIN_ID=0
 ```
 
@@ -123,7 +123,7 @@ ros2 topic pub --once /leader/joint_trajectory_command_broadcaster_left/joint_tr
 ### Relay output check
 ```bash
 source /opt/ros/jazzy/setup.bash
-source /home/disniekie/Robotis/robotis_vr_isaac/ros2_ws/install/setup.bash
+source "${ROBOTIS_VR_ROOT}/ros2_ws/install/setup.bash"
 export ROS_DOMAIN_ID=0
 ros2 topic echo /ffw_isaac/joint_targets --once
 ```
@@ -147,7 +147,7 @@ You should see `lift_joint` and arm joint values updating.
 ## 8) Quick teardown
 
 ```bash
-/home/disniekie/Robotis/robotis_vr_isaac/scripts/run_stack.sh stop
+"${ROBOTIS_VR_ROOT}/scripts/run_stack.sh" stop
 pkill -f "standalone_ffw_joint_teleop.py" || true
 pkill -f "joint_targets_udp_bridge.py" || true
 pkill -f "loop_joint_test.py" || true
@@ -162,10 +162,10 @@ publishes trajectory steps to the same arm topics used by the relay.
 
 ```bash
 source /opt/ros/jazzy/setup.bash
-source /home/disniekie/Robotis/robotis_vr_isaac/ros2_ws/install/setup.bash
+source "${ROBOTIS_VR_ROOT}/ros2_ws/install/setup.bash"
 export ROS_DOMAIN_ID=0
-/usr/bin/python3.12 /home/disniekie/Robotis/robotis_vr_isaac/scripts/publish_pose_from_yaml.py \
-  --config /home/disniekie/Robotis/robotis_vr_isaac/config/arm_forward_pose.yaml
+/usr/bin/python3.12 "${ROBOTIS_VR_ROOT}/scripts/publish_pose_from_yaml.py" \
+  --config "${ROBOTIS_VR_ROOT}/config/arm_forward_pose.yaml"
 ```
 
 Notes:
@@ -182,26 +182,26 @@ If your team has the physical hardware, use the hardware mode in `run_stack.sh`.
 All-in-one (recommended first):
 
 ```bash
-/home/disniekie/Robotis/robotis_vr_isaac/scripts/run_stack.sh start-hardware --hw-model sg2 --hw-all-in-one
+"${ROBOTIS_VR_ROOT}/scripts/run_stack.sh" start-hardware --hw-model sg2 --hw-all-in-one
 ```
 
 Separate launches (follower + leader in background):
 
 ```bash
-/home/disniekie/Robotis/robotis_vr_isaac/scripts/run_stack.sh start-hardware --hw-model sg2
+"${ROBOTIS_VR_ROOT}/scripts/run_stack.sh" start-hardware --hw-model sg2
 ```
 
 For BG2:
 
 ```bash
-/home/disniekie/Robotis/robotis_vr_isaac/scripts/run_stack.sh start-hardware --hw-model bg2
+"${ROBOTIS_VR_ROOT}/scripts/run_stack.sh" start-hardware --hw-model bg2
 ```
 
 Check status / stop:
 
 ```bash
-/home/disniekie/Robotis/robotis_vr_isaac/scripts/run_stack.sh status
-/home/disniekie/Robotis/robotis_vr_isaac/scripts/run_stack.sh stop
+"${ROBOTIS_VR_ROOT}/scripts/run_stack.sh" status
+"${ROBOTIS_VR_ROOT}/scripts/run_stack.sh" stop
 ```
 
 Reference guides:
