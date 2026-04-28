@@ -10,7 +10,6 @@ VR teleoperation bridge for ROBOTIS SG2/BG2 workflows:
 ## What is included
 
 - `scripts/run_stack.sh`: one-command process launcher
-- `scripts/setup_repo.sh`: initializes required submodules
 - `scripts/publish_pose_from_yaml.py`: apply preset arm poses
 - `config/arm_forward_pose.yaml`: sample ready pose
 - `scenes/Scene_clean.usda` + `scenes/Scene.usd`: default Isaac scene files
@@ -22,7 +21,6 @@ VR teleoperation bridge for ROBOTIS SG2/BG2 workflows:
 ```bash
 git clone https://github.com/Disniekie01/aiworker.git
 cd aiworker
-./scripts/setup_repo.sh
 ```
 
 ---
