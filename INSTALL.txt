@@ -1,0 +1,54 @@
+Quest / Vuer teleop without hardware — ROS 2 + DDS relay + optional standalone Isaac Sim
+========================================================================================
+
+A) Prepare URDF for IK (PyBullet)
+   python3 scripts/strip_urdf_meshes.py assets/ffw_bg2_follower.urdf assets/ffw_bg2_follower_nomesh.urdf
+   (Original ffw_bg2_follower.urdf can be refreshed from ROBOTIS-GIT/ai_worker ffw_description.)
+
+B) Python deps (host or venv used with ROS 2)
+   pip install pybullet numpy
+   Install ROBOTIS Cyclone DDS Python bindings:
+     cd /path/to/robotis_lab/third_party/robotis_dds_python && pip install -e .
+
+   Without sudo / apt cyclonedds-dev: build Cyclone DDS C into robotis_vr_isaac/deps/
+   (see deps/cyclonedds + cyclonedds-install), create .venv with python3.12, set
+   CYCLONEDDS_HOME when pip-installing cyclonedds==0.10.2, then pip install -e
+   robotis_dds_python. The install prefix must include an empty bin/ directory
+   so the cyclonedds Python sdist finds CYCLONEDDS_HOME. Then:
+     source .../robotis_vr_isaac/env_local.bash
+   prepends PYTHONPATH (venv + robotis_dds_python) and LD_LIBRARY_PATH for libddsc.
+
+C) Build ROS 2 workspace (Jazzy)
+   cd ros2_ws
+   source /opt/ros/jazzy/setup.bash
+   colcon build --packages-select ffw_vuer_dds_relay
+   source install/setup.bash
+
+D) Same ROS_DOMAIN_ID everywhere (default 0). Match robotis_lab Docker if you use 30.
+
+E) Bring-up order (sim2real-style recording in Isaac Lab with FFWSG2Sdk)
+   1) Terminal — relay (forwards Vuer ROS → DDS + /ffw_isaac/joint_targets):
+      source ros2_ws/install/setup.bash
+      export PYTHONPATH="/path/to/robotis_lab/third_party/robotis_dds_python:${PYTHONPATH}"
+      ros2 launch ffw_vuer_dds_relay relay.launch.py
+   2) Terminal — Vuer (Docker or host):
+      ros2 launch robotis_vuer vr.launch.py model:=sg2
+   3) Terminal — Isaac Lab record_demos (inside robotis_lab container):
+      export ROS_DOMAIN_ID=0
+      python scripts/sim2real/imitation_learning/recorder/record_demos.py \
+        --task=RobotisLab-Real-Pick-Place-FFW-SG2-v0 --robot_type FFW_SG2 \
+        --dataset_file ./datasets/ffw_sg2_raw.hdf5 --num_demos 4 --enable_cameras
+
+F) Standalone Isaac Sim (no Isaac Lab env) — joint mirroring only
+   From Isaac Sim install:
+     ./python.sh /path/to/robotis_vr_isaac/isaac_sim/standalone_ffw_joint_teleop.py \
+       --usd_path /path/to/FFW_SG2.usd \
+       --articulation_prim /World/Robot
+   Adjust --articulation_prim to match the articulation root in the stage (use Isaac Stage tree).
+   Relay publishes JointState on /ffw_isaac/joint_targets; set ROS_DOMAIN_ID to match.
+
+Notes
+-----
+- DDS topic names use Cyclone prefix rt/ internally (TopicManager); they match FFWSG2Sdk readers.
+- Pose IK uses PyBullet + nomesh URDF; results are approximate vs hardware Cyclo.
+- For joystick DDS triggers (episode save) the SDK path may still need /leader/joystick_controller/tact_trigger on DDS; use keyboard N/R/B in record_demos when testing without hardware triggers.

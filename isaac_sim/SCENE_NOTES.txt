@@ -1,0 +1,14 @@
+FFW in Isaac Sim / Isaac Lab — articulation prim hints
+-------------------------------------------------------
+Isaac Lab (robotis_lab) spawns FFW_SG2 with prim_path "{ENV_REGEX_NS}/Robot" (see joint_pos_env_cfg.py).
+For env_0 this is often: /World/envs/env_0/Robot
+
+Inside the USD, links such as ffw_sg2_follower/arm_base_link appear under Robot.
+
+For standalone_ffw_joint_teleop.py:
+- If you spawn the USD at prim /World/Robot, try --articulation_prim /World/Robot first.
+- If Isaac reports the articulation root elsewhere, open the Stage panel and pick the prim with PhysX Articulation Root API.
+
+FFW_BG2 (gripper) uses a similar layout with ffw_bg2_follower in pick_place configs.
+
+Match joint names in the JointState message to the articulation DOF names shown in Isaac (rename_map in INSTALL if needed).
