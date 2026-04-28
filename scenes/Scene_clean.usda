@@ -1,0 +1,87 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def Xform "World"
+{
+    def Xform "Robot"
+    {
+        # Reference only the articulated robot prim from the original scene.
+        # This avoids duplicate root branches that can make the viewport appear static.
+        def Xform "ffw_sg2_follower" (
+            prepend references = @./Scene.usd@</Root/ffw_sg2_follower>
+        )
+        {
+        }
+    }
+
+    # Simple table in front of the robot (static collision).
+    def Xform "Table"
+    {
+        def Cube "Top" (
+            prepend apiSchemas = ["PhysicsCollisionAPI"]
+        )
+        {
+            double size = 1.0
+            float3 xformOp:scale = (0.8, 0.6, 0.05)
+            double3 xformOp:translate = (0.8, 0.0, 0.75)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "LegFL" (
+            prepend apiSchemas = ["PhysicsCollisionAPI"]
+        )
+        {
+            double size = 1.0
+            float3 xformOp:scale = (0.05, 0.05, 0.75)
+            double3 xformOp:translate = (1.1, 0.25, 0.375)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "LegFR" (
+            prepend apiSchemas = ["PhysicsCollisionAPI"]
+        )
+        {
+            double size = 1.0
+            float3 xformOp:scale = (0.05, 0.05, 0.75)
+            double3 xformOp:translate = (1.1, -0.25, 0.375)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "LegBL" (
+            prepend apiSchemas = ["PhysicsCollisionAPI"]
+        )
+        {
+            double size = 1.0
+            float3 xformOp:scale = (0.05, 0.05, 0.75)
+            double3 xformOp:translate = (0.5, 0.25, 0.375)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "LegBR" (
+            prepend apiSchemas = ["PhysicsCollisionAPI"]
+        )
+        {
+            double size = 1.0
+            float3 xformOp:scale = (0.05, 0.05, 0.75)
+            double3 xformOp:translate = (0.5, -0.25, 0.375)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+    }
+
+    # Small cube object on the table (dynamic rigid body for pickup tests).
+    def Cube "PickupCube" (
+        prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsMassAPI", "PhysicsRigidBodyAPI"]
+    )
+    {
+        double size = 1.0
+        float3 xformOp:scale = (0.05, 0.05, 0.05)
+        double3 xformOp:translate = (0.68, 0.0, 0.825)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+
+        float physics:mass = 0.2
+    }
+}

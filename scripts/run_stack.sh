@@ -162,8 +162,12 @@ cmd_start() {
 
   if [[ "${WITH_ISAAC}" == "1" ]]; then
     if [[ -z "${USD_PATH}" ]]; then
-      echo "Error: --with-isaac requires --usd-path"
-      exit 1
+      if [[ -f "${ROOT}/scenes/Scene_clean.usda" ]]; then
+        USD_PATH="${ROOT}/scenes/Scene_clean.usda"
+      else
+        echo "Error: --with-isaac requires --usd-path (or provide ${ROOT}/scenes/Scene_clean.usda)"
+        exit 1
+      fi
     fi
     start_proc isaac "
       cd \"${ISAAC_ROOT}\" &&
@@ -224,8 +228,12 @@ cmd_start_ui() {
   fi
   if [[ "${WITH_ISAAC}" == "1" ]]; then
     if [[ -z "${USD_PATH}" ]]; then
-      echo "Error: --with-isaac requires --usd-path"
-      exit 1
+      if [[ -f "${ROOT}/scenes/Scene_clean.usda" ]]; then
+        USD_PATH="${ROOT}/scenes/Scene_clean.usda"
+      else
+        echo "Error: --with-isaac requires --usd-path (or provide ${ROOT}/scenes/Scene_clean.usda)"
+        exit 1
+      fi
     fi
     launch_ui_proc "${term_bin}" "isaac" "cd \"${ISAAC_ROOT}\" && ./python.sh \"${ROOT}/isaac_sim/standalone_ffw_joint_teleop.py\" --usd_path \"${USD_PATH}\" --spawn_prim \"${SPAWN_PRIM}\" --articulation_prim \"${ARTICULATION_PRIM}\" --input_mode udp --udp_host 127.0.0.1 --udp_port 15000"
   fi
@@ -285,8 +293,12 @@ cmd_start_tmux() {
 
   if [[ "${WITH_ISAAC}" == "1" ]]; then
     if [[ -z "${USD_PATH}" ]]; then
-      echo "Error: --with-isaac requires --usd-path"
-      exit 1
+      if [[ -f "${ROOT}/scenes/Scene_clean.usda" ]]; then
+        USD_PATH="${ROOT}/scenes/Scene_clean.usda"
+      else
+        echo "Error: --with-isaac requires --usd-path (or provide ${ROOT}/scenes/Scene_clean.usda)"
+        exit 1
+      fi
     fi
     tmux new-window -t "${session}" -n isaac
     tmux send-keys -t "${session}:isaac" "cd \"${ISAAC_ROOT}\" && ./python.sh \"${ROOT}/isaac_sim/standalone_ffw_joint_teleop.py\" --usd_path \"${USD_PATH}\" --spawn_prim \"${SPAWN_PRIM}\" --articulation_prim \"${ARTICULATION_PRIM}\" --input_mode udp --udp_host 127.0.0.1 --udp_port 15000" C-m

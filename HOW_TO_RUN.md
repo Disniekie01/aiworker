@@ -58,8 +58,8 @@ Expected:
 ## 3) Terminal C - Isaac script (UDP input mode)
 
 ```bash
-cd /home/disniekie/isaacsim && ./python.sh /home/disniekie/Robotis/robotis_vr_isaac/isaac_sim/standalone_ffw_joint_teleop.py \
-  --usd_path /home/disniekie/Robotis/Scene_clean.usda \
+cd "${ISAAC_ROOT}" && ./python.sh "${ROBOTIS_VR_ROOT}/isaac_sim/standalone_ffw_joint_teleop.py" \
+  --usd_path "${ROBOTIS_VR_ROOT}/scenes/Scene_clean.usda" \
   --spawn_prim /World \
   --articulation_prim /World/Robot/ffw_sg2_follower \
   --input_mode udp \
@@ -206,4 +206,8 @@ Check status / stop:
 Reference guides:
 - Hardware teleoperation: https://ai.robotis.com/ai_worker/operation_teleoperation_ai_worker.html
 - VR teleoperation: https://ai.robotis.com/ai_worker/operation_vr_teleoperation_ai_worker.html
+
+Scene files included in this repo:
+- `scenes/Scene_clean.usda`
+- `scenes/Scene.usd`
 
