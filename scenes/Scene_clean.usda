@@ -26,8 +26,8 @@ def Xform "World"
         )
         {
             double size = 1.0
-            float3 xformOp:scale = (0.8, 0.6, 0.05)
-            double3 xformOp:translate = (0.8, 0.0, 0.75)
+            float3 xformOp:scale = (0.9, 0.7, 0.04)
+            double3 xformOp:translate = (0.72, 0.0, 0.74)
             uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
         }
 
@@ -36,8 +36,8 @@ def Xform "World"
         )
         {
             double size = 1.0
-            float3 xformOp:scale = (0.05, 0.05, 0.75)
-            double3 xformOp:translate = (1.1, 0.25, 0.375)
+            float3 xformOp:scale = (0.05, 0.05, 0.74)
+            double3 xformOp:translate = (1.03, 0.30, 0.37)
             uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
         }
 
@@ -46,8 +46,8 @@ def Xform "World"
         )
         {
             double size = 1.0
-            float3 xformOp:scale = (0.05, 0.05, 0.75)
-            double3 xformOp:translate = (1.1, -0.25, 0.375)
+            float3 xformOp:scale = (0.05, 0.05, 0.74)
+            double3 xformOp:translate = (1.03, -0.30, 0.37)
             uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
         }
 
@@ -56,8 +56,8 @@ def Xform "World"
         )
         {
             double size = 1.0
-            float3 xformOp:scale = (0.05, 0.05, 0.75)
-            double3 xformOp:translate = (0.5, 0.25, 0.375)
+            float3 xformOp:scale = (0.05, 0.05, 0.74)
+            double3 xformOp:translate = (0.41, 0.30, 0.37)
             uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
         }
 
@@ -66,8 +66,8 @@ def Xform "World"
         )
         {
             double size = 1.0
-            float3 xformOp:scale = (0.05, 0.05, 0.75)
-            double3 xformOp:translate = (0.5, -0.25, 0.375)
+            float3 xformOp:scale = (0.05, 0.05, 0.74)
+            double3 xformOp:translate = (0.41, -0.30, 0.37)
             uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
         }
     }
@@ -79,7 +79,7 @@ def Xform "World"
     {
         double size = 1.0
         float3 xformOp:scale = (0.05, 0.05, 0.05)
-        double3 xformOp:translate = (0.68, 0.0, 0.825)
+        double3 xformOp:translate = (0.56, 0.0, 0.785)
         uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
 
         float physics:mass = 0.2
