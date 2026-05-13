@@ -7,16 +7,29 @@ A) Prepare URDF for IK (PyBullet)
 
 B) Python deps (host or venv used with ROS 2)
    pip install pybullet numpy
-   Install ROBOTIS Cyclone DDS Python bindings:
-     cd /path/to/robotis_lab/third_party/robotis_dds_python && pip install -e .
 
-   Without sudo / apt cyclonedds-dev: build Cyclone DDS C into robotis_vr_isaac/deps/
-   (see deps/cyclonedds + cyclonedds-install), create .venv with python3.12, set
-   CYCLONEDDS_HOME when pip-installing cyclonedds==0.10.2, then pip install -e
+   robotis_dds_python (ROBOTIS Cyclone DDS Python bindings) — pick one layout:
+     (1) Clone next to this repo’s third_party/ (good for aiworker-only clones):
+         cd "${ROBOTIS_VR_ROOT}"   # this repository root
+         git clone https://github.com/ROBOTIS-GIT/robotis_dds_python.git third_party/robotis_dds_python
+         cd third_party/robotis_dds_python && pip install -e .
+     (2) Or use robotis_lab sibling checkout:
+         cd ../robotis_lab/third_party/robotis_dds_python && pip install -e .
+
+   Without sudo / apt cyclonedds-dev: build Cyclone DDS C into this repo’s deps/
+   (prefix deps/cyclonedds-install — that directory is gitignored, not shipped).
+   Create .venv with python3.12 at the repo root, export CYCLONEDDS_HOME to that
+   prefix when pip-installing cyclonedds==0.10.2, then pip install -e
    robotis_dds_python. The install prefix must include an empty bin/ directory
-   so the cyclonedds Python sdist finds CYCLONEDDS_HOME. Then:
-     source .../robotis_vr_isaac/env_local.bash
-   prepends PYTHONPATH (venv + robotis_dds_python) and LD_LIBRARY_PATH for libddsc.
+   so the cyclonedds Python sdist finds CYCLONEDDS_HOME. Then in every shell that
+   runs the relay:
+     source /opt/ros/jazzy/setup.bash
+     source "${ROBOTIS_VR_ROOT}/ros2_ws/install/setup.bash"
+     source "${ROBOTIS_VR_ROOT}/env_local.bash"
+   env_local.bash sets LD_LIBRARY_PATH, CYCLONEDDS_HOME, and PYTHONPATH (venv +
+   robotis_dds_python). It prefers third_party/robotis_dds_python, then
+   ../robotis_lab/third_party/robotis_dds_python, and warns if libddsc or the
+   Python tree is missing.
 
 C) Build ROS 2 workspace (Jazzy)
    cd ros2_ws
@@ -28,8 +41,9 @@ D) Same ROS_DOMAIN_ID everywhere (default 0). Match robotis_lab Docker if you us
 
 E) Bring-up order (sim2real-style recording in Isaac Lab with FFWSG2Sdk)
    1) Terminal — relay (forwards Vuer ROS → DDS + /ffw_isaac/joint_targets):
-      source ros2_ws/install/setup.bash
-      export PYTHONPATH="/path/to/robotis_lab/third_party/robotis_dds_python:${PYTHONPATH}"
+      source /opt/ros/jazzy/setup.bash
+      source "${ROBOTIS_VR_ROOT}/ros2_ws/install/setup.bash"
+      source "${ROBOTIS_VR_ROOT}/env_local.bash"
       ros2 launch ffw_vuer_dds_relay relay.launch.py
    2) Terminal — Vuer (Docker or host):
       ros2 launch robotis_vuer vr.launch.py model:=sg2

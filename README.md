@@ -32,7 +32,20 @@ cd aiworker
 - Isaac Sim installed (default assumed at `$HOME/isaacsim`)
 - Quest and host machine on same network
 
-For non-sudo CycloneDDS/python binding setup, see `INSTALL.txt`.
+For step-by-step Cyclone DDS C build and `pip install -e` for `robotis_dds_python`, see `INSTALL.txt`.
+
+### Cyclone DDS and `robotis_dds_python` (relay)
+
+The ROS relay (`ffw_vuer_dds_relay`) loads **Cyclone DDS C** (`libddsc`) and **ROBOTIS** [`robotis_dds_python`](https://github.com/ROBOTIS-GIT/robotis_dds_python). A fresh clone of this repo does **not** include either:
+
+1. **`deps/cyclonedds-install`** — the directory `deps/` is **gitignored**. You must build Cyclone DDS C into that prefix (or install system `cyclonedds-dev` and point `CYCLONEDDS_HOME` accordingly). See `INSTALL.txt`.
+2. **`robotis_dds_python`** — not vendored here. Either:
+   - clone it under **`third_party/robotis_dds_python`** (see `third_party/README.md`), or  
+   - keep a sibling checkout **`../robotis_lab/third_party/robotis_dds_python`** (original layout).
+
+Create a **Python 3.12** venv at the repo root (`.venv`), install `cyclonedds` and `robotis_dds_python` per `INSTALL.txt`, then **always** `source env_local.bash` before `ros2 launch ... relay.launch.py` or `./scripts/run_stack.sh` so `LD_LIBRARY_PATH`, `CYCLONEDDS_HOME`, and `PYTHONPATH` are set. If something is missing, `env_local.bash` prints a short warning to stderr.
+
+If you run everything inside a **ROBOTIS** Docker image that already ships Cyclone and `robotis_dds_python`, you may not need a local `deps/` build; match your image’s layout and `ROS_DOMAIN_ID` with the rest of the stack.
 
 ---
 
@@ -44,7 +57,7 @@ export ROBOTIS_VR_ROOT="$(pwd)"
 export ISAAC_ROOT="${ISAAC_ROOT:-$HOME/isaacsim}"
 ```
 
-If you use local CycloneDDS + python bindings:
+For the relay and any process that imports `robotis_dds_python` / Cyclone from this repo’s venv:
 
 ```bash
 source "${ROBOTIS_VR_ROOT}/env_local.bash"
@@ -134,5 +147,6 @@ export ROS_DOMAIN_ID=0
 - Vuer not tracking: check `./scripts/run_stack.sh status` and ensure port `8012` is not occupied by stale processes.
 - No motion in Isaac: verify `/ffw_isaac/joint_targets` is publishing.
 - Hardware mode fails with `ffw_bringup` not found: source/build correct hardware workspace.
+- **Cyclone DDS not found** / import errors for `robotis_dds_python`: build Cyclone C under `deps/cyclonedds-install` (or set `CYCLONEDDS_HOME` to a valid prefix), clone `robotis_dds_python` per `third_party/README.md`, activate `.venv`, then `source env_local.bash` and read warnings on stderr.
 
 For deep debugging and component-by-component commands, see `HOW_TO_RUN.md`.

@@ -12,6 +12,20 @@ export ISAAC_ROOT="${ISAAC_ROOT:-$HOME/isaacsim}"
 
 Then use `${ROBOTIS_VR_ROOT}` in commands below instead of hardcoded user paths.
 
+### Cyclone DDS + `robotis_dds_python`
+
+Before any relay or `run_stack.sh` step that launches the relay:
+
+- Build **Cyclone DDS C** into `${ROBOTIS_VR_ROOT}/deps/cyclonedds-install` (or install dev packages and set `CYCLONEDDS_HOME`) — see `INSTALL.txt`. The `deps/` tree is not in git.
+- Provide **`robotis_dds_python`** on disk: clone into `${ROBOTIS_VR_ROOT}/third_party/robotis_dds_python` (see `third_party/README.md`) **or** use `${ROBOTIS_VR_ROOT}/../robotis_lab/third_party/robotis_dds_python`.
+- Create `${ROBOTIS_VR_ROOT}/.venv` (Python 3.12), install bindings per `INSTALL.txt`, then in every terminal that runs the relay:
+
+```bash
+source "${ROBOTIS_VR_ROOT}/env_local.bash"
+```
+
+If `libddsc` or `robotis_dds_python` is missing, `env_local.bash` warns on stderr; fix paths before debugging ROS.
+
 ## 0) Stop old processes (optional but recommended)
 
 ```bash
@@ -211,3 +225,10 @@ Scene files included in this repo:
 - `scenes/Scene_clean.usda`
 - `scenes/Scene.usd`
 
+---
+
+## 11) Common failures (Cyclone / DDS Python)
+
+- **`Cyclone DDS not found` or `libddsc` errors:** `deps/cyclonedds-install` was never built or `CYCLONEDDS_HOME` points at the wrong prefix. Follow `INSTALL.txt` and confirm `ls "${ROBOTIS_VR_ROOT}/deps/cyclonedds-install/lib"/libddsc.so*`.
+- **`No module named 'robotis_dds'` (or similar):** clone `robotis_dds_python` into `third_party/` or use `robotis_lab` sibling layout (`third_party/README.md`), then `source env_local.bash` in the same shell as `ros2 launch`.
+- **Warnings when sourcing `env_local.bash`:** fix the missing path it names before chasing ROS launch errors.
