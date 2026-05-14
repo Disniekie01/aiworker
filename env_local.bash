@@ -10,6 +10,7 @@
 
 _ROBOTIS_VR_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export CYCLONEDDS_HOME="${_ROBOTIS_VR_ROOT}/deps/cyclonedds-install"
+export ISAAC_ROOT=/isaac-sim
 export LD_LIBRARY_PATH="${CYCLONEDDS_HOME}/lib:${LD_LIBRARY_PATH:-}"
 
 if ! compgen -G "${CYCLONEDDS_HOME}/lib/libddsc.so"* >/dev/null 2>&1; then

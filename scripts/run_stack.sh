@@ -14,7 +14,7 @@ LOOP_HZ=100
 VUER_INSECURE=0
 VUER_DISABLE_SQUEEZE_GATE=0
 USD_PATH=""
-ISAAC_ROOT="${ISAAC_ROOT:-$HOME/isaacsim}"
+ISAAC_ROOT="${ISAAC_ROOT:-/isaac-sim}"
 SPAWN_PRIM="/World"
 ARTICULATION_PRIM="/World/Robot/ffw_sg2_follower"
 HW_MODEL="sg2"
@@ -113,11 +113,12 @@ stop_proc() {
 
 status_proc() {
   local name="$1"
+  local label="${2:-${name}}"
   local pidf="${PID_DIR}/${name}.pid"
   if [[ -f "${pidf}" ]] && kill -0 "$(cat "${pidf}")" 2>/dev/null; then
-    echo "[up]   ${name} (pid $(cat "${pidf}"))"
+    echo "[up]   ${label} (pid $(cat "${pidf}"))"
   else
-    echo "[down] ${name}"
+    echo "[down] ${label}"
   fi
 }
 
@@ -146,14 +147,10 @@ cmd_start() {
   start_proc udp_bridge "${base_env} && /usr/bin/python3.12 \"${ROOT}/scripts/joint_targets_udp_bridge.py\" --udp_host 127.0.0.1 --udp_port 15000"
 
   if [[ "${WITH_VUER}" == "1" ]]; then
-    local vuer_env=""
-    if [[ "${VUER_INSECURE}" == "1" ]]; then
-      vuer_env="export ROBOTIS_VUER_INSECURE=1 && "
-    fi
-    if [[ "${VUER_DISABLE_SQUEEZE_GATE}" == "1" ]]; then
-      vuer_env="${vuer_env}export ROBOTIS_VUER_DISABLE_SQUEEZE_GATE=1 && "
-    fi
-    start_proc vuer "${base_env} && source \"${ROOT}/robotis_applications/install/setup.bash\" && ${vuer_env}ros2 launch robotis_vuer vr.launch.py model:=sg2"
+    local docker_env="-e ROS_DOMAIN_ID=${DOMAIN_ID}"
+    [[ "${VUER_INSECURE}" == "1" ]] && docker_env="${docker_env} -e ROBOTIS_VUER_INSECURE=1"
+    [[ "${VUER_DISABLE_SQUEEZE_GATE}" == "1" ]] && docker_env="${docker_env} -e ROBOTIS_VUER_DISABLE_SQUEEZE_GATE=1"
+    start_proc vuer "docker exec ${docker_env} robotis-applications bash -ic 'ros2 launch robotis_vuer vr.launch.py model:=sg2'"
   fi
 
   if [[ "${WITH_LOOP_TEST}" == "1" ]]; then
@@ -343,6 +340,19 @@ cmd_stop() {
   stop_proc hw_follower
   stop_proc loop_test
   stop_proc isaac
+  if docker exec robotis-applications pkill -f "[r]os2 launch" 2>/dev/null; then
+    echo "[stop] vuer/launch  (container: ros2 launch)"
+  else
+    echo "[skip] vuer/launch  (container: ros2 launch not found or no container)"
+  fi
+  sleep 1
+  if docker exec robotis-applications pkill -f "[r]obotis_vuer" 2>/dev/null; then
+    echo "[stop] vuer/node    (container: robotis_vuer)"
+  else
+    echo "[skip] vuer/node    (container: robotis_vuer not found or no container)"
+  fi
+  sleep 1
+  docker exec robotis-applications pkill -9 -f "[r]obotis_vuer" 2>/dev/null || true
   stop_proc vuer
   stop_proc udp_bridge
   stop_proc relay
@@ -354,7 +364,22 @@ cmd_status() {
   status_proc hw_leader
   status_proc relay
   status_proc udp_bridge
-  status_proc vuer
+  status_proc vuer "vuer/docker_exec"
+  if docker ps --format '{{.Names}}' | grep -qx "robotis-applications" 2>/dev/null; then
+    if docker exec robotis-applications bash -c 'pgrep -f "[r]os2 launch" > /dev/null 2>&1'; then
+      echo "[up]   vuer/launch  (container: ros2 launch)"
+    else
+      echo "[down] vuer/launch  (container: ros2 launch)"
+    fi
+    if docker exec robotis-applications bash -c 'pgrep -f "[r]obotis_vuer" > /dev/null 2>&1'; then
+      echo "[up]   vuer/node    (container: vr_publisher_sg2)"
+    else
+      echo "[down] vuer/node    (container: vr_publisher_sg2)"
+    fi
+  else
+    echo "[down] vuer/launch  (robotis-applications container not running)"
+    echo "[down] vuer/node    (robotis-applications container not running)"
+  fi
   status_proc isaac
   status_proc loop_test
 }

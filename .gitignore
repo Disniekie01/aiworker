@@ -13,3 +13,6 @@ log/
 *.pem
 *.key
 scenes/Scene.usda
+
+# Cloned build-time dependency (clone manually: see CHANGES.md §1)
+robotis_applications/robotis_interfaces/
