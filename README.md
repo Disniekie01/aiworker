@@ -150,3 +150,29 @@ export ROS_DOMAIN_ID=0
 - **Cyclone DDS not found** / import errors for `robotis_dds_python`: build Cyclone C under `deps/cyclonedds-install` (or set `CYCLONEDDS_HOME` to a valid prefix), clone `robotis_dds_python` per `third_party/README.md`, activate `.venv`, then `source env_local.bash` and read warnings on stderr.
 
 For deep debugging and component-by-component commands, see `HOW_TO_RUN.md`.
+
+---
+
+## 10) Robot state mirror (Isaac Sim visualization)
+
+Mirror real robot joint states into Isaac Sim only (assuming robot operation was executed separately with ROBOTIS' official repository).
+See **[robot_state_mirror.md](robot_state_mirror.md)** for full details.
+
+```bash
+./scripts/launch_isaac_mirror.sh
+```
+
+This feature is **independent of the installation steps in sections 3–8**. The following are not required:
+
+- Cyclone DDS build (`deps/cyclonedds-install`)
+- `robotis_dds_python` clone
+- Python 3.12 venv (`.venv`) / `env_local.bash`
+- `ros2_ws` build (`ffw_vuer_dds_relay`)
+- ROBOTIS Docker container
+- VR / Quest hardware
+
+Only the following are needed:
+
+- ROS 2 Jazzy installed at `/opt/ros/jazzy` (FastRTPS libraries are loaded from there at runtime)
+- Isaac Sim 5.x at `/isaac-sim`
+- Real robot publishing `/joint_states` on `ROS_DOMAIN_ID=30`

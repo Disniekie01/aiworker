@@ -6,7 +6,7 @@ LOG_DIR="${ROOT}/.run_logs"
 PID_DIR="${ROOT}/.run_pids"
 mkdir -p "${LOG_DIR}" "${PID_DIR}"
 
-DOMAIN_ID=0
+DOMAIN_ID=30
 WITH_VUER=0
 WITH_ISAAC=0
 WITH_LOOP_TEST=0
