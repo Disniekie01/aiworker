@@ -16,3 +16,8 @@ scenes/Scene.usda
 
 # Cloned build-time dependency (clone manually: see CHANGES.md §1)
 robotis_applications/robotis_interfaces/
+
+# Scene files
+scenes_steve/
+Collected_Thermo_Fisher_TeleOp_Lab_v01/
+Thermo_SUNGMIN/

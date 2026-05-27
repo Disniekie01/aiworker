@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 import threading
+import traceback
 from typing import Dict, List, Optional
 
 import numpy as np
@@ -15,8 +16,6 @@ from isaacsim import SimulationApp
 
 parser = argparse.ArgumentParser(description="Mirror robot joint states into Isaac Sim")
 parser.add_argument("--usd_path", type=str, required=True, help="USD scene file path")
-parser.add_argument("--articulation_prim", type=str, default="", help="Articulation root prim path (auto-detected if empty)")
-parser.add_argument("--spawn_prim", type=str, default="/World", help="Prim path to load USD into")
 parser.add_argument("--topic", type=str, default="/joint_states", help="sensor_msgs/JointState topic to mirror")
 parser.add_argument("--headless", action="store_true")
 args_cli = parser.parse_args()
@@ -31,10 +30,9 @@ import torch
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import JointState
-import isaacsim.core.utils.prims as prim_utils
+import omni.usd
 from isaacsim.core.api.world import World
 from isaacsim.core.prims import Articulation
-from isaacsim.core.utils.viewports import set_camera_view
 from pxr import PhysxSchema, UsdPhysics  # PhysxSchema used in _find_articulation_root
 
 
@@ -63,45 +61,29 @@ def _map_joints(
     return np.array([idx.get(n, 0.0) for n in sim_names], dtype=np.float32)
 
 
-def _find_articulation_root(spawn_prim: str) -> Optional[str]:
-    import omni.usd
+def _find_articulation_root() -> Optional[str]:
     stage = omni.usd.get_context().get_stage()
     if stage is None:
         return None
-    p = stage.GetPrimAtPath(spawn_prim)
-    if p and p.IsValid() and (UsdPhysics.ArticulationRootAPI(p) or PhysxSchema.PhysxArticulationAPI(p)):
-        return spawn_prim
-    prefix = spawn_prim.rstrip("/") + "/"
     for prim in stage.Traverse():
         if not prim.IsValid():
             continue
-        path = prim.GetPath().pathString
-        if path.startswith(prefix):
-            if UsdPhysics.ArticulationRootAPI(prim) or PhysxSchema.PhysxArticulationAPI(prim):
-                return path
+        if UsdPhysics.ArticulationRootAPI(prim) or PhysxSchema.PhysxArticulationAPI(prim):
+            return prim.GetPath().pathString
     return None
 
 
 def main() -> None:
-    import omni.usd
+    # Open the USD file directly as the stage.
+    omni.usd.get_context().open_stage(args_cli.usd_path)
+    simulation_app.update()
 
     # Physics at 60Hz, rendering at 30Hz to reduce GPU load.
     world = World(physics_dt=1.0 / 60.0, rendering_dt=1.0 / 30.0, backend="torch", device="cpu")
-    # world.get_physics_context().set_gravity(0.0)
-    set_camera_view([2.2, 2.2, 1.5], [0.0, 0.0, 0.8])
-    world.scene.add_default_ground_plane()
 
-    stage = omni.usd.get_context().get_stage()
-    existing = stage.GetPrimAtPath(args_cli.spawn_prim) if stage else None
-    if existing and existing.IsValid():
-        if not existing.HasAuthoredReferences():
-            existing.GetReferences().AddReference(args_cli.usd_path)
-    else:
-        prim_utils.create_prim(args_cli.spawn_prim, usd_path=args_cli.usd_path, translation=(0.0, 0.0, 0.0))
-
-    art_prim = args_cli.articulation_prim.strip() or _find_articulation_root(args_cli.spawn_prim)
+    art_prim = _find_articulation_root()
     if not art_prim:
-        raise RuntimeError(f"No articulation root found under '{args_cli.spawn_prim}'. Use --articulation_prim.")
+        raise RuntimeError("No articulation root found in stage.")
 
     robot = Articulation(art_prim, name="robot_mirror")
     world.scene.add(robot)
@@ -113,7 +95,7 @@ def main() -> None:
         getattr(robot, "joint_names", None) or getattr(robot, "dof_names", [])
     )
     if not sim_joint_names:
-        raise RuntimeError("No joint names found. Verify --articulation_prim points to the articulation root.")
+        raise RuntimeError("No joint names found.")
 
     print(f"[robot_mirror] Articulation : {art_prim}")
     print(f"[robot_mirror] Joints ({len(sim_joint_names)}): {sim_joint_names}")
@@ -144,4 +126,9 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception:
+        traceback.print_exc()
+        simulation_app.close()
+        raise SystemExit(1)

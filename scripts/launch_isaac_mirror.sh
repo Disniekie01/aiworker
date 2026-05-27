@@ -5,8 +5,6 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ISAAC_ROOT="${ISAAC_ROOT:-/isaac-sim}"
 
 USD_PATH="${ROOT}/scenes/Scene_clean.usda"
-ARTICULATION_PRIM="/World/Robot/ffw_sg2_follower"
-SPAWN_PRIM="/World"
 TOPIC="/joint_states"
 HEADLESS=0
 
@@ -16,8 +14,6 @@ Usage: launch_isaac_mirror.sh [options]
 
 Options:
   --usd-path <path>           USD scene file (default: scenes/Scene_clean.usda)
-  --articulation-prim <path>  Articulation root prim (default: /World/Robot/ffw_sg2_follower)
-  --spawn-prim <path>         Spawn prim path (default: /World)
   --topic <topic>             JointState topic to mirror (default: /joint_states)
   --headless                  Run without GUI
   --isaac-root <path>         Isaac Sim root dir (default: /isaac-sim or $ISAAC_ROOT)
@@ -27,8 +23,6 @@ EOF
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --usd-path)          USD_PATH="$2";          shift 2 ;;
-    --articulation-prim) ARTICULATION_PRIM="$2"; shift 2 ;;
-    --spawn-prim)        SPAWN_PRIM="$2";        shift 2 ;;
     --topic)             TOPIC="$2";             shift 2 ;;
     --headless)          HEADLESS=1;             shift   ;;
     --isaac-root)        ISAAC_ROOT="$2";        shift 2 ;;
@@ -59,16 +53,13 @@ fi
 
 ARGS=(
   "${ROOT}/isaac_sim/robot_state_mirror.py"
-  --usd_path         "${USD_PATH}"
-  --spawn_prim       "${SPAWN_PRIM}"
-  --articulation_prim "${ARTICULATION_PRIM}"
-  --topic            "${TOPIC}"
+  --usd_path "${USD_PATH}"
+  --topic    "${TOPIC}"
 )
 [[ "${HEADLESS}" == "1" ]] && ARGS+=(--headless)
 
 echo "[isaac_mirror] Isaac root : ${ISAAC_ROOT}"
 echo "[isaac_mirror] USD        : ${USD_PATH}"
-echo "[isaac_mirror] Prim       : ${ARTICULATION_PRIM}"
 echo "[isaac_mirror] Topic      : ${TOPIC}"
 echo "[isaac_mirror] Domain ID  : ${ROS_DOMAIN_ID}"
 
