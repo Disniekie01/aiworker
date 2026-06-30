@@ -53,17 +53,32 @@ export ROBOTIS_VR_ROOT="$(pwd)"
 export ISAAC_ROOT="${ISAAC_ROOT:-$HOME/isaacsim}"
 ```
 
-### 2. Scene assets
+### 2. Scene assets (included via Git LFS)
+
+This repo ships the shirt scene binaries under `scenes/newscene/` using **Git LFS** (~1 GB).
 
 ```bash
-cd "${ROBOTIS_VR_ROOT}/scenes/newscene"
-./install_assets.sh dist/newscene-assets-*.tar.gz   # after copying tarball from another machine
-# — or —
-./collect_assets.sh copy                            # if you have source FBX/USD locally
-./verify_assets.sh
+# One-time on each machine
+git lfs install
+
+# If you already cloned without LFS files:
+cd aiworker
+git lfs pull
+./scenes/newscene/verify_assets.sh
 ```
 
-Details: `scenes/newscene/README.md` and `scenes/newscene/manifest.json`.
+Fresh clone (LFS downloads automatically if `git-lfs` is installed):
+
+```bash
+git clone https://github.com/Disniekie01/aiworker.git
+cd aiworker
+git lfs pull   # safe to run again; ensures all LFS objects are present
+./scenes/newscene/verify_assets.sh
+```
+
+**Without Git LFS** (not recommended): use the tarball flow in `scenes/newscene/README.md` (`package_assets.sh` / `install_assets.sh`).
+
+Scene entry: `scenes/newscene/newscene.usda`
 
 ### 3. Python + ROS workspace
 
@@ -172,7 +187,9 @@ export ROS_DOMAIN_ID=0
 
 ## Scene assets
 
-Binary meshes are **not** in git (~1 GB). They live under `scenes/newscene/`.
+Shipped in **`scenes/newscene/`** via **Git LFS** (~1 GB). After `git clone`, run `git lfs pull` and `./verify_assets.sh`.
+
+Fallback (no LFS): `package_assets.sh` / `install_assets.sh` — see below.
 
 **Package on a machine that has them:**
 

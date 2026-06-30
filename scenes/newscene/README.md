@@ -1,42 +1,34 @@
 # Self-contained pick/place scene
 
-Isaac Sim stage for FFW SG2 shirt pick/place. The USD layer (`newscene.usda`) is in git; **binary meshes are not** (~1 GB total).
+Isaac Sim stage for FFW SG2 shirt pick/place.
 
-See the main [README](../../README.md#pick--place-simulation) for full setup on a new machine.
+## In git (LFS)
 
-## Quick commands
+Binary meshes live here and are tracked with **Git LFS**:
 
 ```bash
-cd scenes/newscene
-
-# On a machine that already has source assets (Downloads, etc.)
-./collect_assets.sh copy
+git lfs install
+git lfs pull
 ./verify_assets.sh
-
-# Package for transfer
-./package_assets.sh    # writes dist/newscene-assets-YYYYMMDD.tar.gz
-
-# On the new machine (after git clone)
-./install_assets.sh dist/newscene-assets-YYYYMMDD.tar.gz
-./verify_assets.sh
-```
-
-## Scene entry
-
-```text
-scenes/newscene/newscene.usda
 ```
 
 ## Layout
 
 ```text
 newscene/
-  newscene.usda              # main scene (in git)
-  Scene.usda                 # robot articulation (binary, not in git)
+  newscene.usda              # main scene (git)
+  Scene.usda                 # robot articulation (LFS, ~744 MB)
   assets/
-    environment/Austria/     # warehouse / SceneRobot.usd
+    environment/Austria/     # warehouse / SceneRobot.usd (LFS)
     crate/                   # KB3D crate FBX
     shirt/                   # folded shirt USDZ contents
 ```
 
-Asset requirements and env overrides: `manifest.json`.
+## Fallback: tarball (no LFS)
+
+```bash
+./package_assets.sh    # create dist/newscene-assets-*.tar.gz
+./install_assets.sh dist/newscene-assets-*.tar.gz
+```
+
+`collect_assets.sh copy` — gather from local Downloads paths (`manifest.json`).

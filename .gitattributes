@@ -1,0 +1,9 @@
+# Scene binaries (~1 GB) — use Git LFS. After clone: git lfs pull
+scenes/newscene/Scene.usda filter=lfs diff=lfs merge=lfs -text
+scenes/newscene/assets/**/*.usd filter=lfs diff=lfs merge=lfs -text
+scenes/newscene/assets/**/*.usda filter=lfs diff=lfs merge=lfs -text
+scenes/newscene/assets/**/*.usdc filter=lfs diff=lfs merge=lfs -text
+scenes/newscene/assets/**/*.fbx filter=lfs diff=lfs merge=lfs -text
+scenes/newscene/assets/**/*.FBX filter=lfs diff=lfs merge=lfs -text
+scenes/newscene/assets/**/*.jpg filter=lfs diff=lfs merge=lfs -text
+scenes/newscene/assets/**/*.bak filter=lfs diff=lfs merge=lfs -text
