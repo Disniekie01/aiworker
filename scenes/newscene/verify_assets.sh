@@ -43,7 +43,7 @@ done < <(rg -o '@[^@]+@' "${SCENE}" | sort -u)
 
 if [[ "${missing}" -gt 0 ]]; then
   echo "" >&2
-  echo "${missing} missing. Run ./install_assets.sh or ./collect_assets.sh copy" >&2
+  echo "${missing} missing. Run: git lfs pull" >&2
   exit 1
 fi
 echo "All assets present."

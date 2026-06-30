@@ -45,7 +45,7 @@ SHIRT_SRC="${NEWSCENE_SHIRT_USDZ_DIR:-$(expand_path '${HOME}/Downloads/Folded_Sh
 for need in "${AUSTRIA_SRC}/SceneRobot.usd" "${CRATE_SRC}" "${SHIRT_SRC}/scene.usdc" "${ROBOT_SRC}"; do
   if [[ ! -e "${need}" ]]; then
     echo "Missing: ${need}" >&2
-    echo "Set NEWSCENE_* env vars, run ./install_assets.sh, or see manifest.json" >&2
+    echo "Set NEWSCENE_* env vars or see manifest.json" >&2
     exit 1
   fi
 done

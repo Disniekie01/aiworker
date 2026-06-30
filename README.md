@@ -35,7 +35,7 @@ This is a **repeatable demo**, not adaptive manipulation: same points and timing
 - Ubuntu with **ROS 2 Jazzy** (`/opt/ros/jazzy`)
 - **Python 3.12** (`/usr/bin/python3.12`)
 - **Isaac Sim** (default `$HOME/isaacsim`)
-- **Scene assets** ~1 GB (robot USD, warehouse, crate, shirt) — not in git; see [Scene assets](#scene-assets)
+- **Scene assets** ~1 GB — included via **Git LFS** (`scenes/newscene/`)
 - Pick/place stack does **not** need the VR relay or Quest
 
 Optional (VR / hardware): see `INSTALL.txt` and `HOW_TO_RUN.md`.
@@ -75,8 +75,6 @@ cd aiworker
 git lfs pull   # safe to run again; ensures all LFS objects are present
 ./scenes/newscene/verify_assets.sh
 ```
-
-**Without Git LFS** (not recommended): use the tarball flow in `scenes/newscene/README.md` (`package_assets.sh` / `install_assets.sh`).
 
 Scene entry: `scenes/newscene/newscene.usda`
 
@@ -187,28 +185,19 @@ export ROS_DOMAIN_ID=0
 
 ## Scene assets
 
-Shipped in **`scenes/newscene/`** via **Git LFS** (~1 GB). After `git clone`, run `git lfs pull` and `./verify_assets.sh`.
-
-Fallback (no LFS): `package_assets.sh` / `install_assets.sh` — see below.
-
-**Package on a machine that has them:**
+All meshes live in **`scenes/newscene/`** and are tracked with **Git LFS** (~1 GB).
 
 ```bash
-cd scenes/newscene && ./package_assets.sh
-# → dist/newscene-assets-YYYYMMDD.tar.gz
+git lfs install
+git clone https://github.com/Disniekie01/aiworker.git
+cd aiworker
+git lfs pull
+./scenes/newscene/verify_assets.sh
 ```
 
-**Install on a new machine:**
+Scene file: `scenes/newscene/newscene.usda`
 
-```bash
-cd scenes/newscene && ./install_assets.sh dist/newscene-assets-YYYYMMDD.tar.gz
-```
-
-Scene file used by the stack:
-
-```text
-scenes/newscene/newscene.usda
-```
+If files are missing after clone, run `git lfs pull` again (requires `git-lfs` installed).
 
 ---
 
@@ -216,7 +205,7 @@ scenes/newscene/newscene.usda
 
 | Problem | Fix |
 |---------|-----|
-| Blank Isaac / missing robot | `./scenes/newscene/verify_assets.sh` |
+| Blank Isaac / missing robot | `git lfs pull` then `./scenes/newscene/verify_assets.sh` |
 | Robot jitters during playback | Tuner **Live publish** must be OFF |
 | Port 8760 or 8765 in use | `pkill -f pick_place_launcher` or `joint_pose_web_tuner` |
 | Commands ignored | Run from repo root; check `./scripts/run_stack.sh status` |
@@ -236,4 +225,4 @@ scenes/newscene/newscene.usda
 
 ## License
 
-ROBOTIS FFW assets and `robotis_dds_python` follow their upstream licenses. Third-party warehouse, crate, and shirt assets are not redistributed in this repository — use `package_assets.sh` or your own licensed copies.
+ROBOTIS FFW assets and `robotis_dds_python` follow their upstream licenses. Third-party warehouse, crate, and shirt meshes are included via Git LFS for demo use only.

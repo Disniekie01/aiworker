@@ -1,6 +1,6 @@
 {
   "scene_entry": "newscene.usda",
-  "description": "Self-contained pick/place Isaac scene (FFW SG2 + warehouse + crate + shirt).",
+  "description": "Self-contained pick/place Isaac scene (FFW SG2 + warehouse + crate + shirt). Assets are in git via Git LFS.",
   "required_paths": [
     "Scene.usda",
     "assets/environment/Austria/SceneRobot.usd",
@@ -11,21 +11,10 @@
     "assets/crate/KB3D_CTS_Crate_A.mtl",
     "assets/shirt/0/Material_baseColor.jpg"
   ],
-  "default_sources": {
-    "robot_usd": "${ROBOTIS_VR_ROOT}/../Scene.usda",
-    "austria_dir": "${HOME}/Downloads/Austria/Austria",
-    "crate_fbx": "${HOME}/Downloads/KB3D_CTS_Crate_A.fbx",
-    "shirt_usdz_dir": "${HOME}/Downloads/Folded_Shirt_lowpoly_game_asset (Copy 1).usdz"
-  },
   "env_overrides": {
-    "NEWSCENE_ROBOT_USD": "Path to FFW SG2 Scene.usda (~744 MB)",
+    "NEWSCENE_ROBOT_USD": "Path to FFW SG2 Scene.usda (collect_assets.sh only)",
     "NEWSCENE_AUSTRIA_DIR": "Directory containing SceneRobot.usd",
     "NEWSCENE_CRATE_FBX": "KB3D crate FBX",
     "NEWSCENE_SHIRT_USDZ_DIR": "Extracted USDZ folder with scene.usdc"
-  },
-  "archive": {
-    "filename_pattern": "newscene-assets.tar.gz",
-    "create": "./package_assets.sh",
-    "install": "./install_assets.sh path/to/newscene-assets.tar.gz"
   }
 }
