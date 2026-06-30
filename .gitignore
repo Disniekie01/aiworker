@@ -13,3 +13,7 @@ log/
 *.pem
 *.key
 scenes/Scene.usda
+
+# Pick-place launcher / tuner (untracked local state)
+config/pick_place.yaml.bak
+logs/

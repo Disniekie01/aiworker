@@ -1,0 +1,9 @@
+# Pick/place scene binaries (ship via package_assets.sh tarball, not git)
+Scene.usda
+Scene_clean.usda
+assets/environment/
+assets/crate/*
+!assets/crate/.gitkeep
+assets/shirt/*
+!assets/shirt/.gitkeep
+dist/*.tar.gz

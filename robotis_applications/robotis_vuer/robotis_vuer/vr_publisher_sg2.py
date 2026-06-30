@@ -85,8 +85,8 @@ class VRTrajectoryPublisher(Node):
         self.declare_parameter('right_elbow_offset_z', -0.3)
         self.declare_parameter('goal_pose_squeeze_threshold', 0.8)
 
-        # VR publishing control flag
-        self.vr_publishing_enabled = True  # Default: disabled
+        # VR publishing control flag (activated via X left + A right per ROBOTIS VR flow)
+        self.vr_publishing_enabled = False
 
         # VR Server setup
         current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -179,6 +179,7 @@ class VRTrajectoryPublisher(Node):
         self.reactivate_pub = self.create_publisher(Bool, self.reactivate_topic, 10)
         self.both_a_buttons_pressed_prev = False
         self.both_b_buttons_pressed_prev = False
+        self.x_a_activate_pressed_prev = False
         self.last_reactivate_state = None
 
         self.joint_states_sub = self.create_subscription(
@@ -359,8 +360,8 @@ class VRTrajectoryPublisher(Node):
 
         self.get_logger().info('VR Trajectory Publisher node has been started')
         self.get_logger().info(
-            'VR publishing is DISABLED by default. '
-            'Send /vr_control/toggle message (True=enable, False=disable).'
+            'VR teleop: hold both squeeze buttons, then press X (left) + A (right) to activate. '
+            'Release squeeze or press both B to pause. Publish /reactivate Bool also supported.'
         )
         self.get_logger().info(
             f'Stick swap config: left_stick_swap_xy={self.left_stick_swap_xy}, '
@@ -409,11 +410,23 @@ class VRTrajectoryPublisher(Node):
         """Check if value is valid float (excluding NaN, inf)."""
         return isinstance(value, (int, float)) and np.isfinite(value)
 
+    def _set_vr_publishing_enabled(self, enabled: bool, reason: str = "") -> None:
+        enabled = bool(enabled)
+        if self.vr_publishing_enabled == enabled:
+            return
+        self.vr_publishing_enabled = enabled
+        status = 'ENABLED' if enabled else 'DISABLED'
+        msg = f'VR controller {status}'
+        if reason:
+            msg += f' ({reason})'
+        self.get_logger().info(msg)
+
     def _publish_reactivate(self, enabled, reason=None, force_log=False):
         """Publish reactivate Bool message without blocking event callbacks."""
         msg = Bool()
         msg.data = bool(enabled)
         self.reactivate_pub.publish(msg)
+        self._set_vr_publishing_enabled(msg.data, reason=reason or "")
         if force_log or self.last_reactivate_state != msg.data:
             state_text = 'True' if msg.data else 'False'
             reason_text = f' ({reason})' if reason else ''
@@ -550,13 +563,12 @@ class VRTrajectoryPublisher(Node):
         return ros_pos, ros_rotation.as_quat()
 
     def can_publish_goal_pose(self):
-        """Safety gate for goal_pose topics."""
+        """Safety gate for goal_pose topics (squeeze deadman; activation is separate)."""
         if self.disable_squeeze_gate:
-            return self.vr_publishing_enabled
+            return True
         return (
-            self.vr_publishing_enabled and
-            self.left_squeeze_value >= self.goal_pose_squeeze_threshold and
-            self.right_squeeze_value >= self.goal_pose_squeeze_threshold
+            self.left_squeeze_value >= self.goal_pose_squeeze_threshold
+            and self.right_squeeze_value >= self.goal_pose_squeeze_threshold
         )
 
     def apply_wrist_offsets(self, side, position_ros, rotation_ros):
@@ -989,8 +1001,6 @@ class VRTrajectoryPublisher(Node):
     async def on_body_tracking_move(self, event, session):
         """Handle body tracking events and update head transform for controller-relative pose."""
         try:
-            if not self.vr_publishing_enabled:
-                return
             if not isinstance(event.value, dict):
                 return
 
@@ -1041,8 +1051,6 @@ class VRTrajectoryPublisher(Node):
     async def on_controller_move(self, event, session):
         """Handle Meta Quest controller events (CONTROLLER_MOVE)."""
         try:
-            if not self.vr_publishing_enabled:
-                return
             if not isinstance(event.value, dict):
                 return
 
@@ -1111,20 +1119,21 @@ class VRTrajectoryPublisher(Node):
             # Process thumbstick for lift/head/cmd_vel control.
             self.process_thumbstick()
 
-            # Publish reactivate when both A or both B buttons are pressed
-            # (rising edge only).
-            left_a = (
-                bool(self.left_controller_state.get('aButton', False))
+            # ROBOTIS VR flow: X (left) + A (right) activates; both B or squeeze release pauses.
+            left_x = (
+                bool(self.left_controller_state.get('xButton', False))
                 if isinstance(self.left_controller_state, dict) else False
             )
             right_a = (
                 bool(self.right_controller_state.get('aButton', False))
                 if isinstance(self.right_controller_state, dict) else False
             )
-            both_a_now = left_a and right_a
-            if both_a_now and not self.both_a_buttons_pressed_prev:
-                self._publish_reactivate(True, reason='both A buttons', force_log=True)
-            self.both_a_buttons_pressed_prev = both_a_now
+            x_a_now = left_x and right_a
+            if not self.disable_squeeze_gate:
+                x_a_now = x_a_now and self._both_squeezes_active()
+            if x_a_now and not self.x_a_activate_pressed_prev:
+                self._publish_reactivate(True, reason='X left + A right', force_log=True)
+            self.x_a_activate_pressed_prev = x_a_now
 
             left_b = (
                 bool(self.left_controller_state.get('bButton', False))
@@ -1139,7 +1148,7 @@ class VRTrajectoryPublisher(Node):
                 self._publish_reactivate(False, reason='both B buttons', force_log=True)
             self.both_b_buttons_pressed_prev = both_b_now
 
-            if not self._both_squeezes_active():
+            if not self.disable_squeeze_gate and not self._both_squeezes_active():
                 self._publish_reactivate(False, reason='squeeze released')
 
             left_matrix_raw = data.get('left')
@@ -1182,6 +1191,9 @@ class VRTrajectoryPublisher(Node):
                     f'Controller data received | '
                     f'left_matrix={self.left_controller_matrix is not None}, '
                     f'right_matrix={self.right_controller_matrix is not None}, '
+                    f'left_squeeze={self.left_squeeze_value:.3f}, '
+                    f'right_squeeze={self.right_squeeze_value:.3f}, '
+                    f'vr_active={self.vr_publishing_enabled}, '
                     f'left_trigger_raw={l_trg_raw:.3f}, right_trigger_raw={r_trg_raw:.3f}, '
                     f'left_trigger={l_trg:.3f}, right_trigger={r_trg:.3f}, '
                     f'left_stick={l_stick}, right_stick={r_stick}, '

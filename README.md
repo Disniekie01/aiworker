@@ -1,71 +1,73 @@
-# robotis_vr_isaac
+# aiworker — shirt pick/place demo (Isaac Sim)
 
-VR teleoperation bridge for ROBOTIS SG2/BG2 workflows:
+Deterministic **point-to-point** demo: an FFW SG2 robot picks a rigid shirt from a crate and places it back, driven by scripted poses in Isaac Sim (no VR).
 
-- `robotis_vuer` (Quest/Vuer input)
-- ROS 2 relay (`ffw_vuer_dds_relay`) for IK + `/ffw_isaac/joint_targets`
-- UDP bridge for Isaac Sim Python compatibility
-- Optional hardware launch mode for teams with leader/follower hardware
-
-## What is included
-
-- `scripts/run_stack.sh`: one-command process launcher
-- `scripts/publish_pose_from_yaml.py`: apply preset arm poses
-- `config/arm_forward_pose.yaml`: sample ready pose
-- `scenes/Scene_clean.usda` + `scenes/Scene.usd`: default Isaac scene files
+You define **waypoints** (joints, base, crate) in a web tuner. Those points are saved in YAML. Playback **lerps** smoothly between each pair of points at a fixed rate.
 
 ---
 
-## 1) Clone and bootstrap
+## How it works
+
+```
+  Web tuner (8765)          config/pick_place.yaml          Dashboard (8760)
+  ─────────────────         ───────────────────────         ─────────────────
+  Move robot live    →      Named steps: Start, GRIPP,  →   Start Isaac
+  per step/point            Drop, … (each a full pose)       Run YAML playback
+  Write YAML                duration + easing per step       Start/stop tuner
+```
+
+| Piece | Role |
+|-------|------|
+| **Points (steps)** | Named poses in `pick_place.yaml` — e.g. `Start`, `GRIPP`, `Drop`. Each stores all arm joints, grippers, lift, head, mobile base, and crate pose. |
+| **Tuner** | Live UI to drag the robot into position for one step, then **Write YAML** to save that point. |
+| **YAML playback** | Reads step A → step B and **linearly interpolates (lerp)** between them at 30 Hz with smooth easing. Not teleop — the path is fixed once YAML is written. |
+| **Physics grasp** | At `GRIPP` the shirt latches to the gripper; at `Drop` it releases. Grip is friction + kinematic follow, not a scripted shirt path. |
+| **Dashboard** | `run_launcher.sh` — one page to start Isaac, run the sequence, and open the tuner. |
+
+This is a **repeatable demo**, not adaptive manipulation: same points and timings every run unless you change YAML.
+
+**Do not run YAML playback and tuner live-publish at the same time** — both send to `/ffw_isaac/joint_targets` and will fight each other. Tune → Write YAML → turn **Live publish OFF** → run YAML.
+
+---
+
+## Requirements
+
+- Ubuntu with **ROS 2 Jazzy** (`/opt/ros/jazzy`)
+- **Python 3.12** (`/usr/bin/python3.12`)
+- **Isaac Sim** (default `$HOME/isaacsim`)
+- **Scene assets** ~1 GB (robot USD, warehouse, crate, shirt) — not in git; see [Scene assets](#scene-assets)
+- Pick/place stack does **not** need the VR relay or Quest
+
+Optional (VR / hardware): see `INSTALL.txt` and `HOW_TO_RUN.md`.
+
+---
+
+## Install
+
+### 1. Clone
 
 ```bash
 git clone https://github.com/Disniekie01/aiworker.git
 cd aiworker
-```
-
----
-
-## 2) Prerequisites
-
-- Ubuntu + ROS 2 Jazzy installed (`/opt/ros/jazzy`)
-- Python 3.12 available for ROS scripts
-- Isaac Sim installed (default assumed at `$HOME/isaacsim`)
-- Quest and host machine on same network
-
-For step-by-step Cyclone DDS C build and `pip install -e` for `robotis_dds_python`, see `INSTALL.txt`.
-
-### Cyclone DDS and `robotis_dds_python` (relay)
-
-The ROS relay (`ffw_vuer_dds_relay`) loads **Cyclone DDS C** (`libddsc`) and **ROBOTIS** [`robotis_dds_python`](https://github.com/ROBOTIS-GIT/robotis_dds_python). A fresh clone of this repo does **not** include either:
-
-1. **`deps/cyclonedds-install`** — the directory `deps/` is **gitignored**. You must build Cyclone DDS C into that prefix (or install system `cyclonedds-dev` and point `CYCLONEDDS_HOME` accordingly). See `INSTALL.txt`.
-2. **`robotis_dds_python`** — not vendored here. Either:
-   - clone it under **`third_party/robotis_dds_python`** (see `third_party/README.md`), or  
-   - keep a sibling checkout **`../robotis_lab/third_party/robotis_dds_python`** (original layout).
-
-Create a **Python 3.12** venv at the repo root (`.venv`), install `cyclonedds` and `robotis_dds_python` per `INSTALL.txt`, then **always** `source env_local.bash` before `ros2 launch ... relay.launch.py` or `./scripts/run_stack.sh` so `LD_LIBRARY_PATH`, `CYCLONEDDS_HOME`, and `PYTHONPATH` are set. If something is missing, `env_local.bash` prints a short warning to stderr.
-
-If you run everything inside a **ROBOTIS** Docker image that already ships Cyclone and `robotis_dds_python`, you may not need a local `deps/` build; match your image’s layout and `ROS_DOMAIN_ID` with the rest of the stack.
-
----
-
-## 3) Environment setup
-
-```bash
-cd /path/to/aiworker
 export ROBOTIS_VR_ROOT="$(pwd)"
 export ISAAC_ROOT="${ISAAC_ROOT:-$HOME/isaacsim}"
 ```
 
-For the relay and any process that imports `robotis_dds_python` / Cyclone from this repo’s venv:
+### 2. Scene assets
 
 ```bash
-source "${ROBOTIS_VR_ROOT}/env_local.bash"
+cd "${ROBOTIS_VR_ROOT}/scenes/newscene"
+./install_assets.sh dist/newscene-assets-*.tar.gz   # after copying tarball from another machine
+# — or —
+./collect_assets.sh copy                            # if you have source FBX/USD locally
+./verify_assets.sh
 ```
 
----
+Details: `scenes/newscene/README.md` and `scenes/newscene/manifest.json`.
 
-## 4) Build ROS workspace
+### 3. Python + ROS workspace
+
+Pick/place only needs the UDP bridge (no Cyclone relay). Minimal setup:
 
 ```bash
 source /opt/ros/jazzy/setup.bash
@@ -74,19 +76,40 @@ colcon build --packages-select ffw_vuer_dds_relay
 source install/setup.bash
 ```
 
+If you also use VR teleop, build Cyclone DDS + `robotis_dds_python` per **`INSTALL.txt`** and `source env_local.bash` before the relay.
+
+### 4. Check scene
+
+```bash
+"${ROBOTIS_VR_ROOT}/scenes/newscene/verify_assets.sh"
+```
+
 ---
 
-## 5) Run simulation stack (Vuer + Isaac)
+## Run with the dashboard
 
 ```bash
 cd "${ROBOTIS_VR_ROOT}"
-./scripts/run_stack.sh start --with-vuer --with-isaac
-./scripts/run_stack.sh status
+./scripts/run_launcher.sh
 ```
 
-Notes:
-- If `--usd-path` is omitted, launcher uses `scenes/Scene_clean.usda`.
-- To stop all managed processes:
+Open **http://127.0.0.1:8760**
+
+| Button | Action |
+|--------|--------|
+| **Start Isaac** | UDP bridge + Isaac Sim with physics-grasp shirt scene |
+| **Start tuner** | Pose editor at http://127.0.0.1:8765 |
+| **Run sequence** | Plays `config/pick_place.yaml` (~40–50 s at 70% speed) |
+| **Stop** | Stops each service |
+
+### Typical session
+
+1. **Start Isaac** — wait until robot, crate, and shirt appear in the viewport (1–3 min first launch).
+2. **Start tuner** → **Open tuner** — adjust poses if needed (see [Tuning waypoints](#tuning-waypoints)).
+3. Turn **Live publish OFF** in the tuner.
+4. **Run sequence** on the dashboard — watch pick → carry → drop.
+
+Stop everything:
 
 ```bash
 ./scripts/run_stack.sh stop
@@ -94,59 +117,106 @@ Notes:
 
 ---
 
-## 6) Quest connect flow
+## Tuning waypoints
 
-Open on Quest browser:
-
-`https://vuer.ai?ws=wss://<HOST_IP>:8012`
-
-Then:
-- Click **Enter VR**
-- Confirm controller axes visible
-- Hold both squeeze buttons (normal safety gate)
-- Align arms and activate as required by your controller flow
-
----
-
-## 7) Hardware mode (for teams with real hardware)
-
-All-in-one:
-
-```bash
-./scripts/run_stack.sh start-hardware --hw-model sg2 --hw-all-in-one
-```
-
-Separate follower + leader:
-
-```bash
-./scripts/run_stack.sh start-hardware --hw-model sg2
-```
-
-BG2:
-
-```bash
-./scripts/run_stack.sh start-hardware --hw-model bg2
-```
-
----
-
-## 8) Apply preset arm pose
+Open the tuner (from dashboard or manually):
 
 ```bash
 source /opt/ros/jazzy/setup.bash
 source "${ROBOTIS_VR_ROOT}/ros2_ws/install/setup.bash"
 export ROS_DOMAIN_ID=0
-/usr/bin/python3.12 "${ROBOTIS_VR_ROOT}/scripts/publish_pose_from_yaml.py" \
-  --config "${ROBOTIS_VR_ROOT}/config/arm_forward_pose.yaml"
+/usr/bin/python3.12 scripts/joint_pose_web_tuner.py \
+  --config config/pick_place.yaml --physics-grasp
+```
+
+http://127.0.0.1:8765
+
+1. Pick a **step** from the dropdown (`GRIPP`, `Drop`, …).
+2. Move **arm / gripper / base** sliders until the pose looks right in Isaac.
+3. Adjust **crate pose** sliders if the crate should move per step.
+4. At **GRIPP**, tune **grasp attach offset** while the shirt is latched (ATTACH frame, not mesh inspector).
+5. Click **Write YAML** — saves points to `config/pick_place.yaml`.
+6. Turn **Live publish OFF**, then run the sequence from the dashboard.
+
+### What gets lerped
+
+`publish_pose_from_yaml.py` walks `step_names` in order. For each transition it lerps:
+
+- All arm joints and grippers (`arm_duration`, default 1 s)
+- Lift, head, base (`duration`, default 2 s — base can take longer on steps like `Turn`)
+- Crate pose (same timing as arms)
+
+Settings in YAML: `duration`, `arm_duration`, `playback_speed`, `publish_hz`, `easing: smooth`.
+
+Example steps: `Start → Ready → … → GRIPP → Lift → Turn → Drop → Rest`.
+
+---
+
+## Manual run (without dashboard)
+
+```bash
+cd "${ROBOTIS_VR_ROOT}"
+./scripts/run_stack.sh start --pick-place --with-isaac --physics-grasp
+```
+
+Second terminal:
+
+```bash
+source /opt/ros/jazzy/setup.bash
+source "${ROBOTIS_VR_ROOT}/ros2_ws/install/setup.bash"
+export ROS_DOMAIN_ID=0
+/usr/bin/python3.12 scripts/publish_pose_from_yaml.py --config config/pick_place.yaml
 ```
 
 ---
 
-## 9) Troubleshooting quick checks
+## Scene assets
 
-- Vuer not tracking: check `./scripts/run_stack.sh status` and ensure port `8012` is not occupied by stale processes.
-- No motion in Isaac: verify `/ffw_isaac/joint_targets` is publishing.
-- Hardware mode fails with `ffw_bringup` not found: source/build correct hardware workspace.
-- **Cyclone DDS not found** / import errors for `robotis_dds_python`: build Cyclone C under `deps/cyclonedds-install` (or set `CYCLONEDDS_HOME` to a valid prefix), clone `robotis_dds_python` per `third_party/README.md`, activate `.venv`, then `source env_local.bash` and read warnings on stderr.
+Binary meshes are **not** in git (~1 GB). They live under `scenes/newscene/`.
 
-For deep debugging and component-by-component commands, see `HOW_TO_RUN.md`.
+**Package on a machine that has them:**
+
+```bash
+cd scenes/newscene && ./package_assets.sh
+# → dist/newscene-assets-YYYYMMDD.tar.gz
+```
+
+**Install on a new machine:**
+
+```bash
+cd scenes/newscene && ./install_assets.sh dist/newscene-assets-YYYYMMDD.tar.gz
+```
+
+Scene file used by the stack:
+
+```text
+scenes/newscene/newscene.usda
+```
+
+---
+
+## Troubleshooting
+
+| Problem | Fix |
+|---------|-----|
+| Blank Isaac / missing robot | `./scenes/newscene/verify_assets.sh` |
+| Robot jitters during playback | Tuner **Live publish** must be OFF |
+| Port 8760 or 8765 in use | `pkill -f pick_place_launcher` or `joint_pose_web_tuner` |
+| Commands ignored | Run from repo root; check `./scripts/run_stack.sh status` |
+| Shirt doesn’t stick | Tune grasp attach at `GRIPP` in tuner, Write YAML |
+
+---
+
+## Other modes
+
+| Mode | Doc |
+|------|-----|
+| VR teleop (Quest) | `HOW_TO_RUN.md` — `./scripts/run_stack.sh start --with-vuer --with-isaac` |
+| Hardware bringup | `README` hardware section / `run_stack.sh start-hardware` |
+| Full Cyclone + relay install | `INSTALL.txt` |
+
+---
+
+## License
+
+ROBOTIS FFW assets and `robotis_dds_python` follow their upstream licenses. Third-party warehouse, crate, and shirt assets are not redistributed in this repository — use `package_assets.sh` or your own licensed copies.

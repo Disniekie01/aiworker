@@ -1,0 +1,45 @@
+# VR teleop start pose — matches ROBOTIS guidance: elbows bent forward, hands in front.
+# See https://docs.robotis.com/docs/systems/aiworker/quick_start_guide/operation_guide/vr_teleoperation
+# Align your physical arms to this pose before pressing X (left) + A (right) to activate IK.
+/**:
+  arm_l_joint_trajectory_executor:
+    ros__parameters:
+      joint_names:
+        - arm_l_joint1
+        - arm_l_joint2
+        - arm_l_joint3
+        - arm_l_joint4
+        - arm_l_joint5
+        - arm_l_joint6
+        - arm_l_joint7
+        - gripper_l_joint1
+      step_names: [Start]
+      step_base_pose:
+        Start: [-1.079, 0.0, 0.14134318288933656, 0.0]
+      step_lift:
+        Start: 0.0
+      step_head:
+        Start: [0.0, 0.0]
+      # shoulder forward, elbow bent (~90°), wrists neutral
+      Start: [1.57, 0.0, 0.0, -2.2, 0.0, 0.0, 0.0, 0.0]
+      duration: 3.0
+      action_topic: /leader/joint_trajectory_command_broadcaster_left/joint_trajectory
+      joint_states_topic: /joint_states
+
+  arm_r_joint_trajectory_executor:
+    ros__parameters:
+      joint_names:
+        - arm_r_joint1
+        - arm_r_joint2
+        - arm_r_joint3
+        - arm_r_joint4
+        - arm_r_joint5
+        - arm_r_joint6
+        - arm_r_joint7
+        - gripper_r_joint1
+      step_names: [Start]
+      # Right arm joint2 range is negative on SG2
+      Start: [-1.57, 0.0, 0.0, -2.2, 0.0, 0.0, 0.0, 0.0]
+      duration: 3.0
+      action_topic: /leader/joint_trajectory_command_broadcaster_right/joint_trajectory
+      joint_states_topic: /joint_states

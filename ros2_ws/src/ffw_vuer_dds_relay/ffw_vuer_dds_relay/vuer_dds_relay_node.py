@@ -22,6 +22,7 @@ from geometry_msgs.msg import PoseStamped
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy
 from sensor_msgs.msg import JointState
+from std_msgs.msg import Bool
 from trajectory_msgs.msg import JointTrajectory
 
 # ROBOTIS DDS (install: pip install -e robotis_lab/third_party/robotis_dds_python)
@@ -87,6 +88,8 @@ class VuerDdsRelayNode(Node):
         self.declare_parameter("ik_smoothing", 0.35)
         self.declare_parameter("control_rate_hz", 60.0)
         self.declare_parameter("isaac_joint_topic", "/ffw_isaac/joint_targets")
+        self.declare_parameter("start_pose_yaml", "")
+        self.declare_parameter("start_pose_step", "Start")
 
         urdf = str(self.get_parameter("urdf_path").value).strip()
         if not urdf:
@@ -139,6 +142,8 @@ class VuerDdsRelayNode(Node):
 
         self._cmd_prev = {n: 0.0 for n in FULL_JOINT_ORDER}
         self._cmd_prev["lift_joint"] = -0.15
+        self._vr_active = False
+        self._load_start_pose_from_yaml()
 
         qos = QoSProfile(depth=5, reliability=ReliabilityPolicy.BEST_EFFORT)
 
@@ -168,6 +173,7 @@ class VuerDdsRelayNode(Node):
         )
         self.create_subscription(PoseStamped, "/l_goal_pose", self._cb_l_pose, qos)
         self.create_subscription(PoseStamped, "/r_goal_pose", self._cb_r_pose, qos)
+        self.create_subscription(Bool, "/reactivate", self._cb_reactivate, 10)
 
         self._pub_isaac = self.create_publisher(
             JointState, str(self.get_parameter("isaac_joint_topic").value), 10
@@ -177,8 +183,37 @@ class VuerDdsRelayNode(Node):
         self._timer = self.create_timer(1.0 / max(hz, 1.0), self._tick)
         self.get_logger().info(
             f"Vuer DDS relay running (domain {domain_id}). "
-            f"Isaac joint targets: {self.get_parameter('isaac_joint_topic').value}"
+            f"Isaac joint targets: {self.get_parameter('isaac_joint_topic').value}. "
+            f"Arm IK gated on /reactivate (X left + A right while squeezing)."
         )
+
+    def _load_start_pose_from_yaml(self) -> None:
+        yaml_path = str(self.get_parameter("start_pose_yaml").value).strip()
+        if not yaml_path:
+            return
+        step = str(self.get_parameter("start_pose_step").value).strip() or "Start"
+        try:
+            import sys
+            from pathlib import Path
+
+            yaml_p = Path(yaml_path).resolve()
+            root = os.environ.get("ROBOTIS_VR_ISAAC_ROOT", "").strip()
+            if not root:
+                root = str(yaml_p.parent.parent)
+            if str(root) not in sys.path:
+                sys.path.insert(0, str(root))
+            from yaml_pose_loader import load_step_pose
+
+            pose = load_step_pose(yaml_path, step)
+            for n in FULL_JOINT_ORDER:
+                if n in pose:
+                    self._cmd_prev[n] = float(pose[n])
+            self.get_logger().info(
+                f"Start pose from {yaml_path} step={step} "
+                f"(base_x={pose.get('isaac_base_x', 0):.3f})"
+            )
+        except Exception as exc:
+            self.get_logger().warn(f"Could not load start pose from {yaml_path}: {exc!r}")
 
     def destroy_node(self) -> bool:
         if self._ik is not None:
@@ -209,6 +244,18 @@ class VuerDdsRelayNode(Node):
         with self._lock:
             self._r_pose = msg
 
+    def _cb_reactivate(self, msg: Bool) -> None:
+        with self._lock:
+            active = bool(msg.data)
+            if active == self._vr_active:
+                return
+            self._vr_active = active
+            if not active:
+                self._l_pose = None
+                self._r_pose = None
+        state = "active" if active else "paused"
+        self.get_logger().info(f"VR arm IK {state} (/reactivate={active})")
+
     def _tick(self) -> None:
         with self._lock:
             cmd = dict(self._cmd_prev)
@@ -218,16 +265,17 @@ class VuerDdsRelayNode(Node):
             cmd.update(self._grip_r_map)
 
             seed = dict(cmd)
-            if self._ik is not None and self._l_pose is not None:
-                pos, quat = pose_to_numpy(self._l_pose)
-                sol = self._ik.solve("left", pos, quat, seed)
-                if sol:
-                    cmd.update(sol)
-            if self._ik is not None and self._r_pose is not None:
-                pos, quat = pose_to_numpy(self._r_pose)
-                sol = self._ik.solve("right", pos, quat, seed)
-                if sol:
-                    cmd.update(sol)
+            if self._vr_active:
+                if self._ik is not None and self._l_pose is not None:
+                    pos, quat = pose_to_numpy(self._l_pose)
+                    sol = self._ik.solve("left", pos, quat, seed)
+                    if sol:
+                        cmd.update(sol)
+                if self._ik is not None and self._r_pose is not None:
+                    pos, quat = pose_to_numpy(self._r_pose)
+                    sol = self._ik.solve("right", pos, quat, seed)
+                    if sol:
+                        cmd.update(sol)
 
             a = self._alpha
             for n in FULL_JOINT_ORDER:

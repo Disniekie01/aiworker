@@ -1,0 +1,121 @@
+/**:
+  arm_l_joint_trajectory_executor:
+    ros__parameters:
+      joint_names: [arm_l_joint1, arm_l_joint2, arm_l_joint3, arm_l_joint4, arm_l_joint5,
+        arm_l_joint6, arm_l_joint7, gripper_l_joint1]
+      step_names: [Start, Ready, Rotatetocrate, GripShirt, Gripdown, GRIPP, Lift,
+        Turn, Drop, Button, press, Rest, Rest2]
+      duration: 2.0
+      arm_duration: 1.0
+      playback_speed: 0.7
+      publish_hz: 30.0
+      easing: smooth
+      action_topic: /leader/joint_trajectory_command_broadcaster_left/joint_trajectory
+      joint_states_topic: /joint_states
+      use_current_lift: false
+      lift_start: 0.0
+      lift_joint: 0.0
+      lift_joint_lower: -0.5
+      lift_joint_upper: 0.0
+      base_start: [-0.46878871413050255, 0.0, 0.14134318288933656, 0.0]
+      step_lift: {Start: 0.0, Ready: 0.0, Rotatetocrate: 0.0, GripShirt: 0.0, Gripdown: 0.0,
+        GRIPP: 0.0, Lift: 0.0, Turn: 0.0, Drop: -0.08, Button: -0.08, press: -0.08,
+        Rest: 0.0, Rest2: 0.0}
+      step_head:
+        Start: [0.0, 0.0]
+        Ready: [0.0, 0.0]
+        Rotatetocrate: [0.0, 0.0]
+        GripShirt: [0.0, 0.0]
+        Gripdown: [0.0, 0.0]
+        GRIPP: [0.0, 0.0]
+        Lift: [0.0, 0.0]
+        Turn: [0.0, 0.0]
+        Drop: [0.0, 0.0]
+        Button: [0.0, 0.6499]
+        press: [0.0, 0.6499]
+        Rest: [0.0, 0.0]
+        Rest2: [0.0, 0.0]
+      step_base_pose:
+        Start: [-1.079, 0.0, 0.14134318288933656, 0.0]
+        Ready: [0.022, 0.0, 0.14134318288933656, 0.0]
+        Rotatetocrate: [0.022, 0.0, 0.14134318288933656, -1.29159]
+        GripShirt: [0.022, 0.0, 0.14134318288933656, -1.51159]
+        Gripdown: [0.032, -0.179, 0.14134318288933656, -1.51159]
+        GRIPP: [0.032, -0.179, 0.14134318288933656, -1.51159]
+        Lift: [0.032, -0.179, 0.14134318288933656, -1.51159]
+        Turn: [0.032, 0.005, 0.14134318288933656, 0.3884]
+        Drop: [0.022, -0.039, 0.14134318288933656, 0.45841]
+        Button: [0.022, -0.039, 0.14134318288933656, 0.45841]
+        press: [0.022, -0.039, 0.14134318288933656, 0.45841]
+        Rest: [0.022, 0.0, 0.14134318288933656, 0.0]
+        Rest2: [0.022, 0.0, 0.14134318288933656, 0.0]
+      step_base_durations: {Turn: 6.0}
+      step_arm_durations: {Turn: 4.0}
+      Start: [0.0, 0.0, 0.0, -1.5, 0.0, 0.0, 0.0, 0.0]
+      Ready: [0.0, 0.0, 0.0, -1.5, 0.0, 0.0, 0.0, 0.0]
+      Rotatetocrate: [0.0, 0.0, 0.0, -1.5, 0.0, 0.0, 0.0, 0.0]
+      GripShirt: [-0.69, 0.14, 0.35, -1.4961, 0.02, 1.3, -0.8101, 0.0]
+      Gripdown: [-0.61, 0.55, -0.28, -0.7561, 0.71, 1.19, -1.1001, 0.0]
+      GRIPP: [-0.61, 0.39, -0.28, -0.7561, 0.71, 1.19, -1.1001, 1.0]
+      Lift: [-0.85, 0.39, -0.28, -0.7561, 0.71, 1.19, -1.1001, 1.0]
+      step_shirt_pose:
+        Start: [-0.287, -3.512, 3.799, 0.0, 0.0, 0.0]
+        Ready: [-0.287, -3.512, 3.799, 0.0, 0.0, 0.0]
+        Rotatetocrate: [-0.287, -3.512, 3.799, 0.0, 0.0, 0.0]
+        GripShirt: [-0.287, -3.512, 3.799, 0.0, 0.0, 0.0]
+        Gripdown: [-0.287, -3.512, 3.799, 0.0, 0.0, 0.0]
+        GRIPP: [-0.287, -3.512, 3.799, 0.0, 0.0, 0.0]
+        Lift: [-0.287, -3.512, 3.799, 0.0, 0.0, 0.0]
+        Turn: [-0.287, -3.512, 3.799, 0.0, 0.0, 0.0]
+        Drop: [-0.287, -3.512, 3.799, 0.0, 0.0, 0.0]
+        Button: [-0.287, -3.512, 3.799, 0.0, 0.0, 0.0]
+        press: [-0.287, -3.512, 3.799, 0.0, 0.0, 0.0]
+        Rest: [-0.287, -3.512, 3.799, 0.0, 0.0, 0.0]
+        Rest2: [-0.287, -3.512, 3.799, 0.0, 0.0, 0.0]
+      step_crate_pose:
+        Start: [0.1638, -0.69, 1.04, 0.0, 0.0, 90.0]
+        Ready: [0.1638, -0.69, 1.04, 0.0, 0.0, 90.0]
+        Rotatetocrate: [0.1638, -0.69, 1.04, 0.0, 0.0, 90.0]
+        GripShirt: [0.1638, -0.69, 1.04, 0.0, 0.0, 90.0]
+        Gripdown: [0.1638, -0.69, 1.04, 0.0, 0.0, 90.0]
+        GRIPP: [0.1638, -0.69, 1.04, 0.0, 0.0, 90.0]
+        Lift: [0.1638, -0.69, 1.04, 0.0, 0.0, 90.0]
+        Turn: [0.1638, -0.69, 1.04, 0.0, 0.0, 90.0]
+        Drop: [0.1638, -0.69, 1.04, 0.0, 0.0, 90.0]
+        Button: [0.1638, -0.69, 1.04, 0.0, 0.0, 90.0]
+        press: [0.1638, -0.69, 1.04, 0.0, 0.0, 90.0]
+        Rest: [-1.3282, -0.69, 1.04, 0.0, 0.0, 90.0]
+        Rest2: [-1.3282, -1.359, 1.04, 0.0, 0.0, 90.0]
+      Turn: [-0.85, 0.39, -0.28, -0.7561, 0.71, 1.19, -1.1001, 1.0]
+      Drop: [0.04, 0.0, -0.3, -2.0061, 0.0, 0.0, 0.0, 0.0]
+      Button: [-0.25, 0.27, 0.33, -2.0061, 0.0, 0.0, 0.0, 1.0]
+      press: [-0.19, 0.27, 0.33, -2.0061, 0.0, 0.0, 0.0, 1.0]
+      Rest: [0.0, 0.0, 0.0, -1.5, 0.0, 0.0, 0.0, 0.0]
+      physics_grasp_attach_offset: [-0.203, -0.057, 0.044, 70.8, 1.7587475872661363e+17,
+        167764.8]
+      Rest2: [0.0, 0.0, 0.0, -1.5, 0.0, 0.0, 0.0, 0.0]
+  arm_r_joint_trajectory_executor:
+    ros__parameters:
+      joint_names: [arm_r_joint1, arm_r_joint2, arm_r_joint3, arm_r_joint4, arm_r_joint5,
+        arm_r_joint6, arm_r_joint7, gripper_r_joint1]
+      step_names: [Start, Ready, Rotatetocrate, GripShirt, Gripdown, GRIPP, Lift,
+        Turn, Drop, Button, press, Rest, Rest2]
+      duration: 2.0
+      arm_duration: 1.0
+      publish_hz: 30.0
+      easing: smooth
+      action_topic: /leader/joint_trajectory_command_broadcaster_right/joint_trajectory
+      joint_states_topic: /joint_states
+      Start: [0.0, 0.0, 0.0, -1.5, 0.0, 0.0, 0.0, 0.0]
+      Ready: [0.0, 0.0, 0.0, -1.5, 0.0, 0.0, 0.0, 0.0]
+      Rotatetocrate: [0.0, 0.0, 0.0, -1.5, 0.0, 0.0, 0.0, 0.0]
+      GripShirt: [-1.12, 0.0, 0.16, -0.6861, -0.56, 1.18, 0.3996, 0.0]
+      Gripdown: [-0.9, -0.19, 0.91, -0.4861, -0.92, 0.93, 1.0996, 0.0]
+      GRIPP: [-0.9, -0.18, 1.05, -0.5061, -1.32, 0.82, 0.9796, 1.0]
+      Lift: [-1.09, -0.09, 0.91, -0.4861, -0.92, 0.48, 1.0996, 1.0]
+      Turn: [-1.09, -0.09, 0.91, -0.4861, -0.92, 0.48, 1.0996, 1.0]
+      Drop: [-1.13, 0.0, 1.18, -0.8161, -0.67, -0.53, 0.1596, 0.0]
+      Button: [-1.13, 0.0, 1.18, -0.8161, -0.67, -0.53, 0.1596, 1.0]
+      press: [-1.13, 0.0, 1.18, -0.8161, -0.67, -0.53, 0.1596, 1.0]
+      Rest: [0.0, 0.0, 0.0, -1.5, 0.0, 0.0, 0.0, 0.0]
+      Rest2: [0.0, 0.0, 0.0, -1.5, 0.0, 0.0, 0.0, 0.0]

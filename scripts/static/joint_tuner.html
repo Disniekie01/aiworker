@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FFW Joint Pose Tuner</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --panel: #1a2332;
+      --border: #2d3a4f;
+      --text: #e8eef7;
+      --muted: #8b9cb3;
+      --accent: #3d8bfd;
+      --accent-dim: #2563c7;
+      --ok: #3ecf8e;
+      --warn: #f0b429;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.4;
+    }
+    header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--panel);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: center;
+      justify-content: space-between;
+    }
+    header h1 { margin: 0; font-size: 1.15rem; font-weight: 600; }
+    .status { font-size: 0.85rem; color: var(--muted); }
+    .status.live { color: var(--ok); }
+    main {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1rem;
+      padding: 1rem;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    section {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.85rem 1rem;
+    }
+    section h2 {
+      margin: 0 0 0.75rem;
+      font-size: 0.95rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .hint {
+      margin: -0.35rem 0 0.85rem;
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+    .row {
+      display: grid;
+      grid-template-columns: 9rem 1fr 4.5rem;
+      gap: 0.5rem;
+      align-items: center;
+      margin-bottom: 0.45rem;
+      font-size: 0.82rem;
+    }
+    .row label { color: var(--muted); overflow: hidden; text-overflow: ellipsis; }
+    input[type="range"] { width: 100%; accent-color: var(--accent); }
+    input[type="number"] {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 4px;
+      padding: 0.2rem 0.35rem;
+      font-size: 0.8rem;
+    }
+    .toolbar {
+      grid-column: 1 / -1;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      align-items: center;
+    }
+    .toolbar label { font-size: 0.85rem; color: var(--muted); margin-right: 0.25rem; }
+    select, button, input[type="text"] {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 6px;
+      padding: 0.45rem 0.65rem;
+      font-size: 0.85rem;
+    }
+    button {
+      cursor: pointer;
+      background: var(--accent-dim);
+      border-color: var(--accent);
+    }
+    button:hover { background: var(--accent); }
+    button.secondary { background: transparent; }
+    button.danger { border-color: #c44; background: #522; }
+    .msg {
+      width: 100%;
+      font-size: 0.82rem;
+      color: var(--warn);
+      min-height: 1.2em;
+    }
+    .toggle { display: flex; align-items: center; gap: 0.4rem; }
+    .toggle input { accent-color: var(--ok); }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>FFW Joint Pose Tuner</h1>
+    <div id="status" class="status">Connecting…</div>
+  </header>
+
+  <main>
+    <div class="toolbar">
+      <label for="stepSelect">Load step</label>
+      <select id="stepSelect"></select>
+      <button type="button" id="loadStepBtn">Load into sliders</button>
+      <button type="button" id="snapBtn" class="secondary">Snap from robot</button>
+      <button type="button" id="mirrorBtn" class="secondary">Mirror right → left arm</button>
+      <div class="toggle">
+        <input type="checkbox" id="livePublish" />
+        <label for="livePublish">Live publish to Isaac</label>
+      </div>
+      <hr style="width:100%;border:none;border-top:1px solid var(--border);margin:0.25rem 0" />
+      <label for="newStepName">Step name</label>
+      <input type="text" id="newStepName" placeholder="my_new_step" />
+      <button type="button" id="saveNewBtn">Save as new step</button>
+      <button type="button" id="updateStepBtn" class="secondary">Update selected step</button>
+      <button type="button" id="writeYamlBtn">Write YAML to disk</button>
+      <button type="button" id="downloadYamlBtn" class="secondary">Download YAML</button>
+      <div id="msg" class="msg"></div>
+    </div>
+
+    <section id="leftArm"><h2>Left arm</h2></section>
+    <section id="rightArm"><h2>Right arm</h2></section>
+    <section id="torso"><h2>Lift &amp; head</h2></section>
+    <section id="base"><h2>Base pose (Isaac)</h2></section>
+    <section id="shirt"><h2>Shirt mesh (local)</h2></section>
+    <section id="crate"><h2>Crate (local)</h2></section>
+    <section id="graspAttach" style="display:none">
+      <h2>Grasp attach offset (gripper ATTACH frame)</h2>
+      <p class="hint" id="graspAttachHint">
+        Tune while the shirt is <strong>latched</strong> (GRIPP → Drop). Rotation is X→Y→Z Euler in
+        the gripper ATTACH frame — not the shirt mesh local rotation in Isaac’s property panel.
+        Sliders apply live; Live publish is not required. Use the number boxes for fine steps.
+      </p>
+      <div class="toolbar" style="margin-bottom:0.75rem">
+        <button type="button" id="zeroGraspOffsetBtn" class="secondary">Zero grasp offset</button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const SECTIONS = {
+      leftArm: [],
+      rightArm: [],
+      torso: ["lift_joint", "head_joint1", "head_joint2"],
+      base: ["isaac_base_x", "isaac_base_y", "isaac_base_z", "isaac_base_yaw"],
+      shirt: ["shirt_tx", "shirt_ty", "shirt_tz", "shirt_rx", "shirt_ry", "shirt_rz"],
+      crate: ["crate_tx", "crate_ty", "crate_tz", "crate_rx", "crate_ry", "crate_rz"],
+      graspAttach: [
+        "grasp_attach_tx", "grasp_attach_ty", "grasp_attach_tz",
+        "grasp_attach_rx", "grasp_attach_ry", "grasp_attach_rz",
+      ],
+    };
+
+    let meta = { joints: {}, pose: {} };
+    let publishTimer = null;
+    let graspPublishTimer = null;
+    let cratePublishTimer = null;
+    let holdTimer = null;
+    let dirty = false;
+
+    function $(id) { return document.getElementById(id); }
+    function showMsg(text, isError = false) {
+      const el = $("msg");
+      el.textContent = text || "";
+      el.style.color = isError ? "#f66" : "var(--warn)";
+    }
+
+    async function api(path, opts = {}) {
+      const res = await fetch(path, {
+        headers: { "Content-Type": "application/json" },
+        ...opts,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || res.statusText);
+      return data;
+    }
+
+    function jointRow(name, min, max, step, unclamped = false, unit = "", sectionId = "") {
+      const val = meta.pose[name] ?? 0;
+      const label = unit ? `${name} (${unit})` : name;
+      const row = document.createElement("div");
+      row.className = "row";
+      const numAttrs = unclamped
+        ? `step="${step}"`
+        : `min="${min}" max="${max}" step="${step}"`;
+      row.innerHTML = `
+        <label for="j_${name}">${label}</label>
+        <input type="range" id="j_${name}" min="${min}" max="${max}" step="${step}" value="${val}" />
+        <input type="number" id="n_${name}" ${numAttrs} value="${val}" />
+      `;
+      const slider = row.querySelector(`#j_${name}`);
+      const num = row.querySelector(`#n_${name}`);
+
+      function set(v) {
+        v = parseFloat(v);
+        if (Number.isNaN(v)) v = 0;
+        if (!unclamped) {
+          v = Math.min(max, Math.max(min, v));
+        } else if (v < parseFloat(slider.min) || v > parseFloat(slider.max)) {
+          const pad = Math.max(1, Math.abs(v) * 0.25);
+          slider.min = v - pad;
+          slider.max = v + pad;
+        }
+        slider.value = v;
+        num.value = Number(v).toFixed(4);
+        meta.pose[name] = v;
+        dirty = true;
+        if (sectionId === "graspAttach") {
+          publishGraspOffset();
+        } else if (sectionId === "crate") {
+          publishCratePose();
+        } else {
+          schedulePublish();
+        }
+      }
+      async function publishCratePose() {
+        if (cratePublishTimer) return;
+        cratePublishTimer = setTimeout(async () => {
+          cratePublishTimer = null;
+          try {
+            await api("/api/crate_pose", {
+              method: "POST",
+              body: JSON.stringify({ pose: meta.pose }),
+            });
+            $("livePublish").checked = true;
+            startHoldStream();
+            $("status").textContent = "Crate pose live";
+            $("status").className = "status live";
+          } catch (e) {
+            showMsg(e.message, true);
+          }
+        }, 30);
+      }
+      async function publishGraspOffset() {
+        if (graspPublishTimer) return;
+        graspPublishTimer = setTimeout(async () => {
+          graspPublishTimer = null;
+          try {
+            await api("/api/grasp_offset", {
+              method: "POST",
+              body: JSON.stringify({ pose: meta.pose }),
+            });
+            $("status").textContent = "Grasp offset live";
+            $("status").className = "status live";
+          } catch (e) {
+            showMsg(e.message, true);
+          }
+        }, 30);
+      }
+      slider.addEventListener("input", () => {
+        if (unclamped) {
+          const v = parseFloat(slider.value);
+          const smin = parseFloat(slider.min);
+          const smax = parseFloat(slider.max);
+          const span = smax - smin;
+          const edge = Math.max(step, span * 0.02);
+          if (v >= smax - edge) {
+            slider.max = smax + span * 0.5;
+          }
+          if (v <= smin + edge) {
+            slider.min = smin - span * 0.5;
+          }
+        }
+        set(slider.value);
+      });
+      num.addEventListener("change", () => set(num.value));
+      num.addEventListener("input", () => set(num.value));
+      return row;
+    }
+
+    function buildUI() {
+      const hidden = new Set(meta.hidden_sections || []);
+      for (const [sectionId, names] of Object.entries(SECTIONS)) {
+        const sec = $(sectionId);
+        if (hidden.has(sectionId)) {
+          sec.style.display = "none";
+          continue;
+        }
+        sec.style.display = "";
+        sec.querySelectorAll(".row").forEach((r) => r.remove());
+        const list = names.length ? names : meta.joint_groups?.[sectionId] || [];
+        for (const name of list) {
+          const j = meta.joints[name] || { min: -3.14, max: 3.14, step: 0.01 };
+          const unclamped = !!j.unclamped;
+          const unit = j.unit || "";
+          sec.appendChild(jointRow(name, j.min, j.max, j.step, unclamped, unit, sectionId));
+        }
+      }
+      const sel = $("stepSelect");
+      sel.innerHTML = "";
+      for (const s of meta.steps || []) {
+        const o = document.createElement("option");
+        o.value = s;
+        o.textContent = s;
+        sel.appendChild(o);
+      }
+    }
+
+    function startHoldStream() {
+      stopHoldStream();
+      const hz = meta.publish_hz || 30;
+      holdTimer = setInterval(async () => {
+        if (!$("livePublish").checked) return;
+        try {
+          await api("/api/pose", {
+            method: "POST",
+            body: JSON.stringify({ pose: meta.pose, live: true }),
+          });
+        } catch (_) {}
+      }, 1000 / hz);
+    }
+
+    function stopHoldStream() {
+      if (holdTimer) {
+        clearInterval(holdTimer);
+        holdTimer = null;
+      }
+    }
+
+    function schedulePublish() {
+      if (!$("livePublish").checked || !dirty) return;
+      if (publishTimer) return;
+      publishTimer = setTimeout(async () => {
+        publishTimer = null;
+        dirty = false;
+        try {
+          await api("/api/pose", {
+            method: "POST",
+            body: JSON.stringify({ pose: meta.pose, live: true }),
+          });
+          $("status").textContent = "Publishing @ " + (meta.publish_hz || 30) + " Hz";
+          $("status").className = "status live";
+        } catch (e) {
+          $("status").textContent = "Publish error";
+          $("status").className = "status";
+          showMsg(e.message, true);
+        }
+      }, 50);
+    }
+
+    async function refresh() {
+      meta = await api("/api/meta");
+      buildUI();
+      if (meta.physics_grasp) {
+        showMsg("Grasp attach sliders work during latch. Crate sliders publish live automatically (no Live checkbox needed).");
+      } else {
+        showMsg("");
+      }
+      const publishing = !!meta.publishing;
+      $("livePublish").checked = publishing;
+      if (publishing) {
+        startHoldStream();
+        $("status").textContent = "Live publish ON @ " + (meta.publish_hz || 30) + " Hz";
+        $("status").className = "status live";
+      } else {
+        $("status").textContent = "Ready — enable Live publish to move robot";
+        $("status").className = "status";
+      }
+      // Prefer current robot pose over YAML Start when joint_states is available.
+      try {
+        const snap = await api("/api/snap");
+        if (snap.pose) {
+          meta.pose = { ...meta.pose, ...snap.pose };
+          buildUI();
+        }
+      } catch (_) {}
+    }
+
+    $("livePublish").addEventListener("change", async () => {
+      const on = $("livePublish").checked;
+      try {
+        if (on) {
+          await api("/api/pose", {
+            method: "POST",
+            body: JSON.stringify({ pose: meta.pose, live: true }),
+          });
+          startHoldStream();
+          $("status").textContent = "Live publish ON @ " + (meta.publish_hz || 30) + " Hz";
+          $("status").className = "status live";
+        } else {
+          await api("/api/publish/disable", { method: "POST", body: "{}" });
+          stopHoldStream();
+          $("status").textContent = "Live publish OFF — robot holds position";
+          $("status").className = "status";
+        }
+      } catch (e) { showMsg(e.message, true); }
+    });
+
+    $("loadStepBtn").addEventListener("click", async () => {
+      const step = $("stepSelect").value;
+      if (!step) return;
+      try {
+        const data = await api("/api/steps/" + encodeURIComponent(step));
+        meta.pose = data.pose;
+        buildUI();
+        await api("/api/pose", {
+          method: "POST",
+          body: JSON.stringify({ pose: meta.pose, live: $("livePublish").checked }),
+        });
+        if ($("livePublish").checked) startHoldStream();
+        showMsg("Loaded step: " + step);
+      } catch (e) { showMsg(e.message, true); }
+    });
+
+    $("snapBtn").addEventListener("click", async () => {
+      try {
+        const data = await api("/api/snap");
+        if (!data.pose) throw new Error("No /joint_states yet");
+        meta.pose = { ...meta.pose, ...data.pose };
+        buildUI();
+        schedulePublish();
+        showMsg("Snapped from robot");
+      } catch (e) { showMsg(e.message, true); }
+    });
+
+    $("mirrorBtn").addEventListener("click", async () => {
+      try {
+        const data = await api("/api/mirror-right-arm");
+        meta.pose = data.pose;
+        buildUI();
+        schedulePublish();
+        showMsg(data.message || "Mirrored right arm to left");
+      } catch (e) { showMsg(e.message, true); }
+    });
+
+    $("zeroGraspOffsetBtn").addEventListener("click", async () => {
+      for (const name of SECTIONS.graspAttach) {
+        meta.pose[name] = 0;
+      }
+      buildUI();
+      try {
+        await api("/api/grasp_offset", {
+          method: "POST",
+          body: JSON.stringify({ pose: meta.pose }),
+        });
+        showMsg("Grasp offset reset to zero (latched pose baseline)");
+      } catch (e) { showMsg(e.message, true); }
+    });
+
+    $("saveNewBtn").addEventListener("click", async () => {
+      const name = $("newStepName").value.trim();
+      if (!name) { showMsg("Enter a step name", true); return; }
+      try {
+        const data = await api("/api/steps", {
+          method: "POST",
+          body: JSON.stringify({ name, pose: meta.pose, mode: "new" }),
+        });
+        await refresh();
+        $("stepSelect").value = name;
+        showMsg(data.message || "Saved new step: " + name);
+      } catch (e) { showMsg(e.message, true); }
+    });
+
+    $("updateStepBtn").addEventListener("click", async () => {
+      const name = $("stepSelect").value;
+      if (!name) { showMsg("Select a step to update", true); return; }
+      try {
+        const data = await api("/api/steps", {
+          method: "POST",
+          body: JSON.stringify({ name, pose: meta.pose, mode: "update" }),
+        });
+        showMsg(data.message || "Updated step: " + name);
+      } catch (e) { showMsg(e.message, true); }
+    });
+
+    $("writeYamlBtn").addEventListener("click", async () => {
+      try {
+        const data = await api("/api/yaml/write", { method: "POST", body: "{}" });
+        showMsg(data.message || "YAML written");
+      } catch (e) { showMsg(e.message, true); }
+    });
+
+    $("downloadYamlBtn").addEventListener("click", () => {
+      window.location.href = "/api/yaml/download";
+    });
+
+    refresh().catch((e) => showMsg(e.message, true));
+  </script>
+</body>
+</html>

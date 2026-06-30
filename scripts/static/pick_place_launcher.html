@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pick &amp; Place Launcher</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --panel: #1a2332;
+      --border: #2d3a4f;
+      --text: #e8eef7;
+      --muted: #8b9cb3;
+      --accent: #3d8bfd;
+      --ok: #3ecf8e;
+      --warn: #f0b429;
+      --danger: #f07178;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+    header {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--panel);
+    }
+    header h1 { margin: 0 0 0.35rem; font-size: 1.35rem; }
+    header p { margin: 0; color: var(--muted); font-size: 0.9rem; }
+    .workflow {
+      margin: 1rem 1.5rem 0;
+      padding: 1rem 1.25rem;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+    .workflow ol { margin: 0.5rem 0 0; padding-left: 1.25rem; }
+    .workflow li { margin-bottom: 0.35rem; }
+    .callout {
+      margin-top: 0.85rem;
+      padding: 0.65rem 0.85rem;
+      border-radius: 6px;
+      font-size: 0.88rem;
+      color: var(--text);
+    }
+    .callout.warn {
+      border: 1px solid var(--warn);
+      background: rgba(240, 180, 41, 0.1);
+    }
+    .callout.warn strong { color: var(--warn); }
+    main {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 1rem;
+      padding: 1rem 1.5rem 2rem;
+      max-width: 1200px;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.15rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .card-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+    .card h2 { margin: 0; font-size: 1.05rem; }
+    .badge {
+      font-size: 0.75rem;
+      padding: 0.2rem 0.55rem;
+      border-radius: 999px;
+      white-space: nowrap;
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+    .badge.up { color: var(--ok); border-color: var(--ok); }
+    .badge.partial { color: var(--warn); border-color: var(--warn); }
+    .actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    button, a.btn {
+      font: inherit;
+      font-size: 0.88rem;
+      padding: 0.45rem 0.85rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+    }
+    button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    button:disabled, a.btn.disabled { opacity: 0.45; pointer-events: none; }
+    button.danger { border-color: var(--danger); color: var(--danger); }
+    details.guide {
+      border-top: 1px solid var(--border);
+      padding-top: 0.65rem;
+      font-size: 0.86rem;
+    }
+    details.guide summary {
+      cursor: pointer;
+      color: var(--accent);
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+    details.guide ul { margin: 0.35rem 0 0.75rem; padding-left: 1.2rem; }
+    details.guide li { margin-bottom: 0.3rem; }
+    .meta { font-size: 0.78rem; color: var(--muted); word-break: break-all; }
+    .log-box {
+      font-family: ui-monospace, monospace;
+      font-size: 0.72rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.5rem;
+      max-height: 8rem;
+      overflow: auto;
+      white-space: pre-wrap;
+      color: var(--muted);
+    }
+    #toast {
+      position: fixed;
+      bottom: 1rem;
+      right: 1rem;
+      padding: 0.65rem 1rem;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.85rem;
+      opacity: 0;
+      transition: opacity 0.2s;
+      max-width: 24rem;
+      z-index: 10;
+    }
+    #toast.show { opacity: 1; }
+    #toast.err { border-color: var(--danger); color: var(--danger); }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>FFW Pick &amp; Place Launcher</h1>
+    <p>Physics-grasp shirt pick/place in Isaac Sim — start services in order below.</p>
+  </header>
+
+  <section class="workflow">
+    <strong>Recommended workflow</strong>
+    <ol>
+      <li><strong>Start Isaac</strong> — launches UDP bridge + Isaac Sim (wait until the viewport shows the robot and scene).</li>
+      <li><strong>Tune poses</strong> — start the web tuner, adjust joints / crate / grasp, <strong>Write YAML</strong>, then turn <strong>Live publish OFF</strong>.</li>
+      <li><strong>Run YAML animation</strong> — plays the saved sequence (~40–50 s). Do not publish from the tuner at the same time.</li>
+      <li>Repeat: tune → write YAML → disable live publish → run sequence.</li>
+    </ol>
+    <p class="callout warn">
+      <strong>YAML and tuner conflict:</strong> Both send commands to <code>/ffw_isaac/joint_targets</code>.
+      Only one should publish at a time or the robot will jitter and skip steps.
+      The tuner UI can stay open, but turn off <strong>Live publish</strong> before running YAML.
+      Crate sliders also enable live publish — disable it first.
+      Running YAML auto-disables tuner live publish if the tuner is up.
+    </p>
+  </section>
+
+  <main>
+    <article class="card" id="card-isaac">
+      <div class="card-head">
+        <h2>1. Isaac Sim stack</h2>
+        <span class="badge" id="badge-isaac">checking…</span>
+      </div>
+      <p class="meta" id="meta-isaac"></p>
+      <div class="actions">
+        <button type="button" class="primary" id="btn-isaac-start">Start Isaac</button>
+        <button type="button" class="danger" id="btn-isaac-stop">Stop Isaac</button>
+      </div>
+      <div class="log-box" id="log-isaac"></div>
+      <details class="guide" open>
+        <summary>How to use Isaac</summary>
+        <ul>
+          <li>Starts <code>run_stack.sh</code> with pick-place + physics grasp (UDP bridge on port 15000).</li>
+          <li>First launch can take 1–3 minutes while Isaac loads <code>Scene_clean.usda</code>.</li>
+          <li>Confirm the FFW robot, crate, and shirt appear in the Isaac viewport before running YAML.</li>
+          <li>Check the log below if the window stays blank — look for errors after <code>app ready</code>.</li>
+          <li>Stop Isaac before changing USD paths or restarting the stack.</li>
+        </ul>
+      </details>
+    </article>
+
+    <article class="card" id="card-yaml">
+      <div class="card-head">
+        <h2>2. YAML animation</h2>
+        <span class="badge" id="badge-yaml">checking…</span>
+      </div>
+      <p class="meta" id="meta-yaml"></p>
+      <div class="actions">
+        <button type="button" class="primary" id="btn-yaml-start">Run sequence</button>
+        <button type="button" class="danger" id="btn-yaml-stop">Stop</button>
+      </div>
+      <div class="log-box" id="log-yaml"></div>
+      <details class="guide" open>
+        <summary>How to use YAML animation</summary>
+        <ul>
+          <li>Requires Isaac stack running (step 1).</li>
+          <li><strong>Do not run while the tuner is live-publishing</strong> — both use <code>/ffw_isaac/joint_targets</code>.</li>
+          <li>Turn off <strong>Live publish</strong> in the tuner (or let this launcher disable it when you click Run).</li>
+          <li>Plays <code>config/pick_place.yaml</code> via ROS → UDP → Isaac (~40–50 s at 70% speed).</li>
+          <li>Sequence: Start → Ready → … → GRIPP (grip) → Lift → Turn → Drop (release) → Rest.</li>
+          <li>At <strong>GRIPP</strong> the shirt latches to the gripper; at <strong>Drop</strong> it releases.</li>
+          <li>Safe to run again after each pass completes.</li>
+        </ul>
+      </details>
+    </article>
+
+    <article class="card" id="card-tuner">
+      <div class="card-head">
+        <h2>3. Web pose tuner</h2>
+        <span class="badge" id="badge-tuner">checking…</span>
+      </div>
+      <p class="meta" id="meta-tuner"></p>
+      <div class="actions">
+        <button type="button" class="primary" id="btn-tuner-start">Start tuner</button>
+        <button type="button" class="danger" id="btn-tuner-stop">Stop tuner</button>
+        <a class="btn" id="link-tuner" href="http://127.0.0.1:8765" target="_blank" rel="noopener">Open tuner ↗</a>
+      </div>
+      <div class="log-box" id="log-tuner"></div>
+      <details class="guide" open>
+        <summary>How to use the web tuner</summary>
+        <ul>
+          <li>Requires Isaac stack running. Click <strong>Open tuner</strong> or go to <code>http://127.0.0.1:8765</code>.</li>
+          <li><strong>Conflicts with YAML animation</strong> when <strong>Live publish</strong> is on — same ROS topic.</li>
+          <li>Tune poses, then <strong>Write YAML</strong> and turn <strong>Live publish OFF</strong> before running the sequence.</li>
+          <li>Crate and grasp sliders publish immediately and turn live mode on — disable live publish before YAML.</li>
+          <li>Select a step (e.g. GRIPP) and drag joint sliders — robot moves live in Isaac.</li>
+          <li><strong>Grasp attach offset</strong> — tune while shirt is latched at GRIPP (ATTACH frame, not mesh inspector).</li>
+          <li>Only one tuner process per machine (port 8765). Cannot start while YAML is playing.</li>
+        </ul>
+      </details>
+    </article>
+  </main>
+
+  <div id="toast"></div>
+
+  <script>
+    const toast = document.getElementById("toast");
+    let toastTimer;
+
+    function showToast(msg, isErr) {
+      toast.textContent = msg;
+      toast.className = isErr ? "show err" : "show";
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { toast.className = ""; }, 4000);
+    }
+
+    async function api(path, method) {
+      const res = await fetch(path, { method, headers: { "Content-Type": "application/json" } });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || res.statusText);
+      return data;
+    }
+
+    async function refreshLogs() {
+      const pairs = [
+        ["isaac_stack", "log-isaac"],
+        ["yaml_anim", "log-yaml"],
+        ["web_tuner", "log-tuner"],
+      ];
+      for (const [name, elId] of pairs) {
+        try {
+          const { log } = await fetch(`/api/logs/${name}`).then(r => r.json());
+          document.getElementById(elId).textContent = log || "(no log yet)";
+        } catch (_) {}
+      }
+    }
+
+    function setBadge(el, state, label) {
+      el.textContent = label;
+      el.className = "badge" + (state ? " " + state : "");
+    }
+
+    async function refreshStatus() {
+      try {
+        const s = await fetch("/api/status").then(r => r.json());
+        const stack = s.isaac_stack || {};
+        const yaml = s.yaml || {};
+        const tuner = s.tuner || {};
+
+        document.getElementById("meta-isaac").textContent =
+          `USD: ${s.usd_path || "—"}`;
+        document.getElementById("meta-yaml").textContent =
+          `Config: ${s.config || "—"}`;
+        document.getElementById("meta-tuner").textContent =
+          tuner.running ? `http://127.0.0.1:${s.tuner_port}` : "Not running";
+
+        if (stack.isaac && stack.udp_bridge) {
+          setBadge(document.getElementById("badge-isaac"), "up", "running");
+        } else if (stack.udp_bridge || stack.isaac) {
+          setBadge(document.getElementById("badge-isaac"), "partial", "partial");
+        } else {
+          setBadge(document.getElementById("badge-isaac"), "", "stopped");
+        }
+
+        setBadge(
+          document.getElementById("badge-yaml"),
+          yaml.running ? "up" : "",
+          yaml.running ? "playing" : "idle"
+        );
+        setBadge(
+          document.getElementById("badge-tuner"),
+          tuner.running ? "up" : "",
+          tuner.running ? "running" : "stopped"
+        );
+
+        document.getElementById("btn-yaml-start").disabled = yaml.running;
+        document.getElementById("btn-tuner-start").disabled = yaml.running;
+        document.getElementById("link-tuner").classList.toggle("disabled", !tuner.running);
+      } catch (e) {
+        showToast("Status refresh failed: " + e.message, true);
+      }
+    }
+
+    function wire(btnId, path, okMsg) {
+      document.getElementById(btnId).addEventListener("click", async () => {
+        try {
+          const data = await api(path, "POST");
+          showToast(data.message || okMsg);
+          await refreshStatus();
+          await refreshLogs();
+        } catch (e) {
+          showToast(e.message, true);
+        }
+      });
+    }
+
+    wire("btn-isaac-start", "/api/isaac/start", "Isaac stack starting…");
+    wire("btn-isaac-stop", "/api/isaac/stop", "Isaac stack stopped");
+    wire("btn-yaml-start", "/api/yaml/start", "YAML sequence started");
+    wire("btn-yaml-stop", "/api/yaml/stop", "YAML stopped");
+    wire("btn-tuner-start", "/api/tuner/start", "Tuner started");
+    wire("btn-tuner-stop", "/api/tuner/stop", "Tuner stopped");
+
+    refreshStatus();
+    refreshLogs();
+    setInterval(refreshStatus, 2500);
+    setInterval(refreshLogs, 5000);
+  </script>
+</body>
+</html>

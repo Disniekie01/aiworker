@@ -7,8 +7,8 @@
                 double radius = 5
             }
             dictionary Perspective = {
-                double3 position = (-2.2230712012590783, -2.6206688963064666, 2.646964290424477)
-                double3 target = (1.3925247559451255, -0.062331972748636666, 0.9257777694365208)
+                double3 position = (-0.7454227185095206, -1.4568957258540298, 1.9799993097835562)
+                double3 target = (-0.4046605707950176, -1.0856814047810188, 1.7246283379698406)
             }
             dictionary Right = {
                 double3 position = (0, -5, 0)
@@ -19,6 +19,21 @@
                 double radius = 5
             }
             string boundCamera = "/OmniverseKit_Persp"
+        }
+        dictionary metricsAssembler = {
+            dictionary "/World/Folded_TShirt_V_Neck_10_Pile_White_VRay_StemCell" = {
+            }
+            dictionary "/World/Folded_TShirt_V_Neck_10_Pile_White_VRay_StemCell_01" = {
+            }
+            dictionary "/World/Folded_TShirt_V_Neck_10_Pile_White_VRay_StemCell_02" = {
+            }
+            dictionary "/World/KB3D_CTS_Crate_A" = {
+            }
+            dictionary "/World/Shirt" = {
+            }
+            dictionary "/World/scene" = {
+            }
+            int version = 1
         }
         dictionary omni_layer = {
             string authoring_layer = "./Scene_clean.usda"
@@ -39,6 +54,11 @@ def Xform "World"
             prepend references = @./Scene.usda@</Root/ffw_sg2_follower>
         )
         {
+            string isaac:namespace (
+                displayName = "Namespace"
+                doc = "Namespace of the prim in Isaac Sim"
+            )
+
             over "arm_base_link"
             {
                 over "visuals"
@@ -160,6 +180,13 @@ def Xform "World"
             {
                 over "gripper_r_rh_p12_rn_r1"
                 {
+                    def Xform "ATTACH"
+                    {
+                        quatd xformOp:orient = (1.837589179357618e-15, 0.9999999999999982, 4.371138828673785e-8, 4.3711388286737856e-8)
+                        double3 xformOp:scale = (1, 1, 1)
+                        double3 xformOp:translate = (0.019899991646376205, -0.0053592238471257825, 0.03382466228793435)
+                        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+                    }
                 }
 
                 over "gripper_r_rh_p12_rn_r2"
@@ -458,7 +485,7 @@ def Xform "World"
     }
 
     def "SceneRobot" (
-        prepend payload = @../Downloads/Austria/Austria/SceneRobot.usd@
+        prepend payload = @./assets/environment/Austria/SceneRobot.usd@
     )
     {
         quatf xformOp:orient = (1, 0, 0, 0)
@@ -492,6 +519,50 @@ def Xform "World"
                         }
                     }
                 }
+
+                over "PRODUCT_52521_84" (
+                    delete apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI"]
+                )
+                {
+                    over "Mesh" (
+                        delete apiSchemas = ["PhysicsCollisionAPI", "PhysxCollisionAPI", "PhysxConvexHullCollisionAPI", "PhysicsMeshCollisionAPI"]
+                    )
+                    {
+                    }
+                }
+
+                over "PRODUCT_52521_113" (
+                    delete apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI"]
+                )
+                {
+                    over "Mesh" (
+                        delete apiSchemas = ["PhysicsCollisionAPI", "PhysxCollisionAPI", "PhysxConvexHullCollisionAPI", "PhysicsMeshCollisionAPI"]
+                    )
+                    {
+                    }
+                }
+
+                over "PRODUCT_52521_92" (
+                    delete apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI"]
+                )
+                {
+                    over "Mesh" (
+                        delete apiSchemas = ["PhysicsCollisionAPI", "PhysxCollisionAPI", "PhysxConvexHullCollisionAPI", "PhysicsMeshCollisionAPI"]
+                    )
+                    {
+                    }
+                }
+
+                over "PRODUCT_52521_102" (
+                    delete apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI"]
+                )
+                {
+                    over "Mesh" (
+                        delete apiSchemas = ["PhysicsCollisionAPI", "PhysxCollisionAPI", "PhysxConvexHullCollisionAPI", "PhysicsMeshCollisionAPI"]
+                    )
+                    {
+                    }
+                }
             }
         }
 
@@ -521,6 +592,88 @@ def Xform "World"
         double3 xformOp:scale = (1, 1, 1)
         double3 xformOp:translate = (-11.123565966618628, 0, 0)
         uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+    }
+
+    def "KB3D_CTS_Crate_A" (
+        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI"]
+        prepend payload = @./assets/crate/KB3D_CTS_Crate_A.fbx@
+    )
+    {
+        bool physics:kinematicEnabled = 1
+        bool physics:rigidBodyEnabled = 1
+        int physxRigidBody:lockedPosAxis = 4
+        int physxRigidBody:lockedRotAxis = 7
+        double xformOp:rotateX:unitsResolve = 90
+        float3 xformOp:rotateXYZ = (0, 0, 90)
+        float3 xformOp:scale = (1, 1, 0.40432078)
+        double3 xformOp:scale:unitsResolve = (0.01, 0.01, 0.01)
+        double3 xformOp:translate = (0.1638139638914529, -0.689979076385498, 1.040000081062317)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale", "xformOp:rotateX:unitsResolve", "xformOp:scale:unitsResolve"]
+
+        over "KB3D_CTS_Crate_A_grp"
+        {
+            over "KB3D_CTS_Crate_A_Main"
+            {
+                over "KB3D_CTS_Crate_A_Main" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "PhysxCollisionAPI", "PhysxConvexHullCollisionAPI", "PhysicsMeshCollisionAPI", "PhysxTriangleMeshSimplificationCollisionAPI", "PhysxConvexDecompositionCollisionAPI"]
+                )
+                {
+                    uniform token physics:approximation = "convexDecomposition"
+                    bool physics:collisionEnabled = 1
+                }
+            }
+        }
+
+        over "KB3D_CTS_Crate_A_grp_skel" (
+            active = false
+        )
+        {
+        }
+    }
+
+    def Material "PhysicsMaterial" (
+        prepend apiSchemas = ["PhysxDeformableBodyMaterialAPI"]
+    )
+    {
+        float physxDeformableBodyMaterial:dynamicFriction = 1
+    }
+
+    def "Shirt" (
+        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "MaterialBindingAPI"]
+        prepend payload = @./assets/shirt/scene.usdc@
+    )
+    {
+        rel material:binding = </World/PhysicsMaterial> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        bool physics:kinematicEnabled = 0
+        bool physics:rigidBodyEnabled = 1
+        quatf xformOp:orient = (1, 0, 0, 0)
+        double xformOp:rotateX:unitsResolve = 90
+        float3 xformOp:scale = (1, 1, 1)
+        double3 xformOp:scale:unitsResolve = (0.01, 0.01, 0.01)
+        double3 xformOp:translate = (0.15991006022895465, -0.6902909313568356, 1.0560057795397082)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale", "xformOp:rotateX:unitsResolve", "xformOp:scale:unitsResolve"]
+
+        over "Meshes"
+        {
+            over "Sketchfab_model"
+            {
+                over "simple_folded_shirt_obj_cleaner_materialmerger_gles"
+                {
+                    over "Object_2"
+                    {
+                        over "Object_0" (
+                            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysxCollisionAPI", "PhysxConvexHullCollisionAPI", "PhysicsMeshCollisionAPI"]
+                        )
+                        {
+                            uniform token physics:approximation = "convexHull"
+                            bool physics:collisionEnabled = 1
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
