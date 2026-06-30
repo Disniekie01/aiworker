@@ -1,6 +1,8 @@
 # Self-contained pick/place scene
 
-Isaac Sim stage for FFW SG2 shirt pick/place. **Assets are in git via Git LFS.**
+Isaac stage: `newscene.usda` (robot + warehouse + crate + shirt).
+
+## After clone (any machine)
 
 ```bash
 git lfs install
@@ -8,17 +10,19 @@ git lfs pull
 ./verify_assets.sh
 ```
 
+All asset paths in `newscene.usda` are **relative to this folder** — no `~/Downloads` references.
+
 ## Layout
 
 ```text
-newscene/
-  newscene.usda              # main scene
-  Scene.usda                 # robot articulation (~744 MB, LFS)
+scenes/newscene/
+  newscene.usda
+  Scene.usda                 # LFS
   assets/environment/Austria/
   assets/crate/
   assets/shirt/
 ```
 
-`collect_assets.sh` — optional maintainer script to rebuild assets from local source files (`manifest.json`).
+## Maintainers
 
-See the main [README](../../README.md).
+To rebuild meshes from external source files (not needed for normal clones), set `NEWSCENE_*` env vars listed in `manifest.json` and run `./collect_assets.sh copy`.

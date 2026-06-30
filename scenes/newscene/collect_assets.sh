@@ -1,20 +1,41 @@
 #!/usr/bin/env bash
-# Bundle external assets into scenes/newscene/ with relative USD paths.
-# Usage: ./collect_assets.sh [link|copy]
+# Maintainer tool: rebuild scenes/newscene/ binaries from external source files.
+# Normal installs use Git LFS: git lfs pull && ./verify_assets.sh
+#
+# Requires all NEWSCENE_* paths (see manifest.json). No machine-local defaults.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO="$(cd "${ROOT}/../.." && pwd)"
-MODE="${1:-link}"
+MODE="${1:-copy}"
 
 log() { echo "[collect] $*"; }
 
-expand_path() {
-  local p="$1"
-  p="${p//\$\{ROBOTIS_VR_ROOT\}/${REPO}}"
-  p="${p//\$\{HOME\}/${HOME}}"
-  printf '%s' "${p}"
-}
+if [[ -z "${NEWSCENE_ROBOT_USD:-}" || -z "${NEWSCENE_AUSTRIA_DIR:-}" \
+   || -z "${NEWSCENE_CRATE_FBX:-}" || -z "${NEWSCENE_SHIRT_USDZ_DIR:-}" ]]; then
+  cat >&2 <<EOF
+collect_assets.sh is for maintainers rebuilding scene meshes from source files.
+
+On a fresh clone, use Git LFS instead:
+  git lfs install
+  git lfs pull
+  ./verify_assets.sh
+
+To rebuild manually, set all of:
+  NEWSCENE_ROBOT_USD       FFW SG2 Scene.usda
+  NEWSCENE_AUSTRIA_DIR     folder with SceneRobot.usd
+  NEWSCENE_CRATE_FBX       KB3D crate FBX
+  NEWSCENE_SHIRT_USDZ_DIR  extracted shirt USDZ folder (contains scene.usdc)
+
+See manifest.json
+EOF
+  exit 1
+fi
+
+ROBOT_SRC="${NEWSCENE_ROBOT_USD}"
+AUSTRIA_SRC="${NEWSCENE_AUSTRIA_DIR}"
+CRATE_SRC="${NEWSCENE_CRATE_FBX}"
+SHIRT_SRC="${NEWSCENE_SHIRT_USDZ_DIR}"
 
 copy_or_link() {
   local src="$1" dst="$2"
@@ -37,15 +58,9 @@ copy_or_link() {
   fi
 }
 
-ROBOT_SRC="${NEWSCENE_ROBOT_USD:-${REPO}/../Scene.usda}"
-AUSTRIA_SRC="${NEWSCENE_AUSTRIA_DIR:-$(expand_path '${HOME}/Downloads/Austria/Austria')}"
-CRATE_SRC="${NEWSCENE_CRATE_FBX:-$(expand_path '${HOME}/Downloads/KB3D_CTS_Crate_A.fbx')}"
-SHIRT_SRC="${NEWSCENE_SHIRT_USDZ_DIR:-$(expand_path '${HOME}/Downloads/Folded_Shirt_lowpoly_game_asset (Copy 1).usdz')}"
-
 for need in "${AUSTRIA_SRC}/SceneRobot.usd" "${CRATE_SRC}" "${SHIRT_SRC}/scene.usdc" "${ROBOT_SRC}"; do
   if [[ ! -e "${need}" ]]; then
     echo "Missing: ${need}" >&2
-    echo "Set NEWSCENE_* env vars or see manifest.json" >&2
     exit 1
   fi
 done
@@ -88,7 +103,4 @@ path.write_text(text, encoding="utf-8")
 print(f"[collect] ensured relative paths in {path}")
 PY
 
-cp "${TEMPLATE}" "${ROOT}/Scene_clean.usda"
-
-log "done — entry: ${ROOT}/newscene.usda"
-log "verify: ./verify_assets.sh"
+log "done — run ./verify_assets.sh and commit LFS objects if changed"

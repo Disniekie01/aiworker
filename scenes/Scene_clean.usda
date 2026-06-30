@@ -36,7 +36,7 @@ def Xform "World"
     def Xform "Robot"
     {
         def Xform "ffw_sg2_follower" (
-            prepend references = @./Scene.usda@</Root/ffw_sg2_follower>
+            prepend references = @./newscene/Scene.usda@</Root/ffw_sg2_follower>
         )
         {
             over "arm_base_link"
@@ -458,7 +458,7 @@ def Xform "World"
     }
 
     def "SceneRobot" (
-        prepend payload = @../Downloads/Austria/Austria/SceneRobot.usd@
+        prepend payload = @./newscene/assets/environment/Austria/SceneRobot.usd@
     )
     {
         quatf xformOp:orient = (1, 0, 0, 0)

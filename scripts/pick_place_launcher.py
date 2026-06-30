@@ -47,9 +47,6 @@ def _resolve_usd_path(explicit: str | None) -> str:
         raise FileNotFoundError(f"USD not found: {p}")
     candidates = [
         SCRIPT_ROOT / "scenes" / "newscene" / "newscene.usda",
-        SCRIPT_ROOT / "scenes" / "newscene" / "Scene_clean.usda",
-        SCRIPT_ROOT.parent / "Scene_clean.usda",
-        SCRIPT_ROOT / "scenes" / "Scene_clean.usda",
     ]
     for c in candidates:
         if c.is_file():

@@ -3,7 +3,7 @@
     endTimeCode = 720
     startTimeCode = 0
     subLayers = [
-        @/home/disniekie/Robotis/Scene_clean.usda@
+        @../scenes/newscene/newscene.usda@
     ]
     timeCodesPerSecond = 30
 )

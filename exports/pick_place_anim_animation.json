@@ -1,5 +1,5 @@
 {
-  "source_yaml": "/home/disniekie/Robotis/robotis_vr_isaac/config/pick_place.yaml",
+  "source_yaml": "config/pick_place.yaml",
   "fps": 30.0,
   "duration_s": 24.00000000000035,
   "frame_count": 721,

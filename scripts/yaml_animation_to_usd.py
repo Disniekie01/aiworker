@@ -35,7 +35,7 @@ DRIVE_REVOLUTE = "drive:angular:physics:targetPosition"
 DRIVE_PRISMATIC = "drive:linear:physics:targetPosition"
 PRISMATIC_JOINTS = {"lift_joint"}
 
-DEFAULT_SCENE = Path("/home/disniekie/Robotis/Scene_clean.usda")
+DEFAULT_SCENE = _SCRIPT_DIR.parent / "scenes" / "newscene" / "newscene.usda"
 DEFAULT_JOINTS_ROOT = "/World/Robot/ffw_sg2_follower/joints"
 DEFAULT_BASE_PRIM = "/World/Robot"
 DEFAULT_SHIRT_MESH = (

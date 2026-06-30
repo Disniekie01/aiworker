@@ -1,6 +1,6 @@
 {
   "scene_entry": "newscene.usda",
-  "description": "Self-contained pick/place Isaac scene (FFW SG2 + warehouse + crate + shirt). Assets are in git via Git LFS.",
+  "description": "Self-contained pick/place Isaac scene. Assets ship in git via Git LFS — run git lfs pull after clone.",
   "required_paths": [
     "Scene.usda",
     "assets/environment/Austria/SceneRobot.usd",
@@ -11,10 +11,11 @@
     "assets/crate/KB3D_CTS_Crate_A.mtl",
     "assets/shirt/0/Material_baseColor.jpg"
   ],
-  "env_overrides": {
-    "NEWSCENE_ROBOT_USD": "Path to FFW SG2 Scene.usda (collect_assets.sh only)",
+  "maintainer_rebuild_env": {
+    "NEWSCENE_ROBOT_USD": "Path to FFW SG2 Scene.usda",
     "NEWSCENE_AUSTRIA_DIR": "Directory containing SceneRobot.usd",
     "NEWSCENE_CRATE_FBX": "KB3D crate FBX",
     "NEWSCENE_SHIRT_USDZ_DIR": "Extracted USDZ folder with scene.usdc"
-  }
+  },
+  "maintainer_script": "./collect_assets.sh copy"
 }

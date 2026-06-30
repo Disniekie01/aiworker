@@ -4,7 +4,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CONFIG="${ROOT}/config/pick_place.yaml"
-SCENE="${SCENE_USD:-/home/disniekie/Robotis/Scene_clean.usda}"
+SCENE="${SCENE_USD:-${ROOT}/scenes/newscene/newscene.usda}"
 EXPORT_DIR="${ROOT}/exports"
 ANIM_JSON="${EXPORT_DIR}/pick_place_animation.json"
 OUT_USD="${EXPORT_DIR}/pick_place_anim.usda"
@@ -14,7 +14,8 @@ find_isaac_python() {
     echo "${ISAAC_PYTHON}"
     return
   fi
-  for c in "${HOME}/isaacsim/python.sh" "/home/disniekie/isaacsim/python.sh"; do
+  local isaac_root="${ISAAC_ROOT:-${HOME}/isaacsim}"
+  for c in "${isaac_root}/python.sh"; do
     if [[ -x "${c}" ]]; then
       echo "${c}"
       return

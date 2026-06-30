@@ -23,7 +23,7 @@ if sys.version_info[:2] != (3, 12):
     raise RuntimeError(
         "joint_targets_udp_bridge.py must run with Python 3.12 for ROS Jazzy rclpy.\n"
         "Use:\n"
-        "  /usr/bin/python3.12 /home/disniekie/Robotis/robotis_vr_isaac/scripts/joint_targets_udp_bridge.py\n"
+        "  /usr/bin/python3.12 scripts/joint_targets_udp_bridge.py\n"
         "or deactivate conda before running."
     )
 

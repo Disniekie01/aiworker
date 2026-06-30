@@ -712,9 +712,14 @@ def main() -> None:
         )
         if _rclpy_err is not None:
             print("[isaac_ffw_teleop] rclpy unavailable in Isaac env:", repr(_rclpy_err))
+        _bridge = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)),
+            "scripts",
+            "joint_targets_udp_bridge.py",
+        )
         print(
             "[isaac_ffw_teleop] Run bridge in ROS terminal:",
-            "python /home/disniekie/Robotis/robotis_vr_isaac/scripts/joint_targets_udp_bridge.py",
+            f"/usr/bin/python3.12 {_bridge}",
         )
 
     sim_joint_names: Optional[List[str]] = None
