@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+set -euo pipefail
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ISAAC_ROOT="${ISAAC_ROOT:-/isaac-sim}"
+USD_PATH="${ROOT}/scenes/Scene_clean.usda"
+TOPIC="/joint_states"
+HEADLESS=0
+usage() {
+  cat <<'EOF'
+Usage: launch_isaac_mirror.sh [options]
+Options:
+  --usd-path <path>           USD scene file (default: scenes/Scene_clean.usda)
+  --topic <topic>             JointState topic to mirror (default: /joint_states)
+  --headless                  Run without GUI
+  --isaac-root <path>         Isaac Sim root dir (default: /isaac-sim or $ISAAC_ROOT)
+EOF
+}
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --usd-path)          USD_PATH="$2";          shift 2 ;;
+    --topic)             TOPIC="$2";             shift 2 ;;
+    --headless)          HEADLESS=1;             shift   ;;
+    --isaac-root)        ISAAC_ROOT="$2";        shift 2 ;;
+    -h|--help) usage; exit 0 ;;
+    *) echo "Unknown option: $1"; usage; exit 1 ;;
+  esac
+done
+if [[ ! -f "${USD_PATH}" ]]; then
+  echo "Error: USD file not found: ${USD_PATH}"
+  exit 1
+fi
+export ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-30}"
+
+# Prioritize Isaac Sim's own ROS2 bridge libraries over the system ROS2 ones.
+# The jazzy/lib directory contains the rcl/rmw/fastrtps .so files compiled for
+# Isaac's runtime; these must come before any system ROS2 paths.
+export LD_LIBRARY_PATH="${ISAAC_ROOT}/exts/isaacsim.ros2.bridge/jazzy/lib:${LD_LIBRARY_PATH:-}"
+
+# Prepend the bridge's own rclpy (cpython-311 build lives under jazzy/rclpy/)
+# so Isaac's Python 3.11 finds it before any system rclpy.
+BRIDGE_RCLPY="${ISAAC_ROOT}/exts/isaacsim.ros2.bridge/jazzy/rclpy"
+if [[ -d "${BRIDGE_RCLPY}" ]]; then
+  export PYTHONPATH="${BRIDGE_RCLPY}:${PYTHONPATH:-}"
+else
+  echo "[isaac_mirror] WARNING: Bridge rclpy not found at ${BRIDGE_RCLPY}"
+fi
+
+# Strip all system ROS paths and any Python version-specific site-packages that
+# are incompatible with Isaac's Python 3.11 interpreter.  
+# This only affects the subshell spawned by this script.
+if [[ -n "${PYTHONPATH:-}" ]]; then
+  PYTHONPATH="$(echo "${PYTHONPATH}" | tr ':' '\n' \
+    | grep -v '/opt/ros/' \
+    | grep -v 'python3\.10' \
+    | grep -v 'python3\.12' \
+    | paste -sd: -)"
+  export PYTHONPATH
+fi
+
+# Unset system ROS environment variables that can cause the Isaac ROS2 bridge
+# extension to mis-detect the runtime distro and load the wrong native libs.
+unset ROS_DISTRO          || true
+unset AMENT_PREFIX_PATH   || true
+unset COLCON_PREFIX_PATH  || true
+
+ARGS=(
+  "${ROOT}/isaac_sim/robot_state_mirror.py"
+  --usd_path "${USD_PATH}"
+  --topic    "${TOPIC}"
+)
+[[ "${HEADLESS}" == "1" ]] && ARGS+=(--headless)
+
+echo "[isaac_mirror] Isaac root : ${ISAAC_ROOT}"
+echo "[isaac_mirror] USD        : ${USD_PATH}"
+echo "[isaac_mirror] Topic      : ${TOPIC}"
+echo "[isaac_mirror] Domain ID  : ${ROS_DOMAIN_ID}"
+echo "[isaac_mirror] Bridge rclpy: ${BRIDGE_RCLPY}"
+exec "${ISAAC_ROOT}/python.sh" "${ARGS[@]}"
