@@ -34,11 +34,13 @@ export ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-30}"
 # Prioritize Isaac Sim's own ROS2 bridge libraries over the system ROS2 ones.
 # The jazzy/lib directory contains the rcl/rmw/fastrtps .so files compiled for
 # Isaac's runtime; these must come before any system ROS2 paths.
-export LD_LIBRARY_PATH="${ISAAC_ROOT}/exts/isaacsim.ros2.bridge/jazzy/lib:${LD_LIBRARY_PATH:-}"
+# As of Isaac Sim 6.0's extension restructuring, these bundled libs live under
+# the isaacsim.ros2.core extension, not isaacsim.ros2.bridge.
+export LD_LIBRARY_PATH="${ISAAC_ROOT}/exts/isaacsim.ros2.core/jazzy/lib:${LD_LIBRARY_PATH:-}"
 
-# Prepend the bridge's own rclpy (cpython-311 build lives under jazzy/rclpy/)
-# so Isaac's Python 3.11 finds it before any system rclpy.
-BRIDGE_RCLPY="${ISAAC_ROOT}/exts/isaacsim.ros2.bridge/jazzy/rclpy"
+# Prepend the bridge's own rclpy (cpython build lives under jazzy/rclpy/)
+# so Isaac's Python finds it before any system rclpy.
+BRIDGE_RCLPY="${ISAAC_ROOT}/exts/isaacsim.ros2.core/jazzy/rclpy"
 if [[ -d "${BRIDGE_RCLPY}" ]]; then
   export PYTHONPATH="${BRIDGE_RCLPY}:${PYTHONPATH:-}"
 else
@@ -63,7 +65,7 @@ unset ROS_DISTRO          || true
 unset AMENT_PREFIX_PATH   || true
 unset COLCON_PREFIX_PATH  || true
 
-ARGS=(
+ARGS=(  
   "${ROOT}/isaac_sim/robot_state_mirror.py"
   --usd_path "${USD_PATH}"
   --topic    "${TOPIC}"
