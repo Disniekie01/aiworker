@@ -60,8 +60,17 @@ fi
 
 # Unset system ROS environment variables that can cause the Isaac ROS2 bridge
 # extension to mis-detect the runtime distro and load the wrong native libs.
+# AMENT_PREFIX_PATH is left intact: rcl requires it to be set (rmw_init.cpp
+# fails otherwise), and it only affects resource/package index lookups, not
+# which .so files get loaded — that's already pinned by LD_LIBRARY_PATH above.
+# When nothing has set it (e.g. no system ROS2 install on this machine), fall
+# back to an empty dummy ament index so rcl_init still gets a valid path.
+if [[ -z "${AMENT_PREFIX_PATH:-}" ]]; then
+  DUMMY_AMENT_PREFIX="$(mktemp -d)"
+  mkdir -p "${DUMMY_AMENT_PREFIX}/share/ament_index/resource_index/packages"
+  export AMENT_PREFIX_PATH="${DUMMY_AMENT_PREFIX}"
+fi
 unset ROS_DISTRO          || true
-unset AMENT_PREFIX_PATH   || true
 unset COLCON_PREFIX_PATH  || true
 
 ARGS=(
